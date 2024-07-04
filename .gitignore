@@ -7,3 +7,5 @@ dist
 target
 */.vscode/*
 .vs
+
+/.devcontainer/
