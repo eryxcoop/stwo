@@ -85,5 +85,6 @@ impl GpuBackend {
     }
 }
 
-use super::cpu::CpuCircleEvaluation;
-pub type GpuCircleEvaluation<F, EvalOrder> = CpuCircleEvaluation<F, EvalOrder>;
+use crate::core::poly::circle::CircleEvaluation;
+use super::cpu::CpuBackend;
+pub type GpuCircleEvaluation<F, EvalOrder> = CircleEvaluation<CpuBackend, F, EvalOrder>;
