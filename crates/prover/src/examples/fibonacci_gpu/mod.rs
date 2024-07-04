@@ -5,7 +5,7 @@ mod component;
 
 use self::air::FibonacciAir;
 use self::component::FibonacciComponent;
-use crate::core::backend::cpu::CpuCircleEvaluation;
+use crate::core::backend::gpu::GpuCircleEvaluation;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::FieldExpOps;
 use crate::core::poly::circle::{CanonicCoset, CircleEvaluation};
@@ -24,7 +24,7 @@ impl Fibonacci {
         }
     }
 
-    pub fn get_trace(&self) -> CpuCircleEvaluation<BaseField, BitReversedOrder> {
+    pub fn get_trace(&self) -> GpuCircleEvaluation<BaseField, BitReversedOrder> {
         // Trace.
         let trace_domain = CanonicCoset::new(self.air.component.log_size);
         // TODO(AlonH): Consider using Vec::new instead of Vec::with_capacity throughout file.
