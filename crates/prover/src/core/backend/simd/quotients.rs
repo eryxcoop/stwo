@@ -151,7 +151,7 @@ fn denominator_inverses(
         .collect()
 }
 
-fn quotient_constants(
+pub fn quotient_constants(
     sample_batches: &[ColumnSampleBatch],
     random_coeff: SecureField,
     domain: CircleDomain,
