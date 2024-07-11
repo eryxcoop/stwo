@@ -127,8 +127,8 @@ mod tests {
     fn test_composition_polynomial_is_low_degree() {
         let fibonacci_program = Fibonacci::new(5, m31!(443693538));
         
-        let fib_trace = FibonacciTrace::new(&fibonacci_program);
-        let component_traces = fib_trace.component_traces();
+        let fibonacci_trace = FibonacciTrace::new(&fibonacci_program);
+        let component_traces = fibonacci_trace.component_traces();
 
         let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
         let composition_polynomial_poly = fibonacci_program
