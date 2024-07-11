@@ -123,7 +123,7 @@ mod tests {
         }
     }
 
-    fn xxx(point: CirclePoint<SecureField>, fibonacci_program: Fibonacci, component_traces: &Vec<ComponentTrace<'_, CpuBackend>>, random_coeff: SecureField) -> SecureField {
+    fn evaluate_constraint_quotients_at_point(point: CirclePoint<SecureField>, fibonacci_program: Fibonacci, component_traces: &Vec<ComponentTrace<'_, CpuBackend>>, random_coeff: SecureField) -> SecureField {
         let points = fibonacci_program.air.mask_points(point);
         let mask_values = zip(&component_traces[0].polys, &points[0])
             .map(|(poly, points)| {
@@ -158,7 +158,7 @@ mod tests {
         // Evaluate this polynomial at another point out of the evaluation domain and compare to
         // what we expect.
         let point = CirclePoint::<SecureField>::get_point(98989892);
-        let oods_value = xxx(point, fibonacci_program, &component_traces, random_coeff);
+        let oods_value = evaluate_constraint_quotients_at_point(point, fibonacci_program, &component_traces, random_coeff);
 
         assert_eq!(oods_value, composition_polynomial_poly.eval_at_point(point));
     }
