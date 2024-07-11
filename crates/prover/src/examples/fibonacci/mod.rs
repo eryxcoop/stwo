@@ -100,12 +100,12 @@ mod tests {
         queries
     }
 
-    struct FibonacciTrace {
+    struct FibonacciComponentTraces {
         trace_poly: CirclePoly<CpuBackend>,
         trace_eval: CircleEvaluation<CpuBackend, BaseField, BitReversedOrder>
     }
 
-    impl FibonacciTrace {
+    impl FibonacciComponentTraces {
         fn new(fibonacci_program: & Fibonacci) -> Self {
             let trace = fibonacci_program.get_trace();
             let trace_poly = trace.interpolate();
@@ -118,7 +118,7 @@ mod tests {
             }
         }
 
-        fn component_traces(& self) -> Vec<ComponentTrace<'_, CpuBackend>> {
+        fn evaluate(& self) -> Vec<ComponentTrace<'_, CpuBackend>> {
             vec![ComponentTrace::new(vec![&self.trace_poly], vec![&self.trace_eval])]
         }
     }
@@ -147,20 +147,20 @@ mod tests {
     fn test_composition_polynomial_is_low_degree() {
         let fibonacci_program = Fibonacci::new(5, m31!(443693538));
         
-        let fibonacci_trace = FibonacciTrace::new(&fibonacci_program);
-        let component_traces = fibonacci_trace.component_traces();
+        let fibonacci_component_traces = FibonacciComponentTraces::new(&fibonacci_program);
+        let component_traces = fibonacci_component_traces.evaluate();
 
         let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
-        let composition_polynomial_poly = fibonacci_program
+        let composition_polynomial = fibonacci_program
             .air
             .compute_composition_polynomial(random_coeff, &component_traces);
 
         // Evaluate this polynomial at another point out of the evaluation domain and compare to
         // what we expect.
         let point = CirclePoint::<SecureField>::get_point(98989892);
+        
         let oods_value = evaluate_constraint_quotients_at_point(point, fibonacci_program, &component_traces, random_coeff);
-
-        assert_eq!(oods_value, composition_polynomial_poly.eval_at_point(point));
+        assert_eq!(oods_value, composition_polynomial.eval_at_point(point));
     }
 
     #[test]
