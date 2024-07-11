@@ -100,8 +100,8 @@ mod tests {
 
     #[test]
     fn test_composition_polynomial_is_low_degree() {
-        let fib = Fibonacci::new(5, m31!(443693538));
-        let trace = fib.get_trace();
+        let fibonacci_program = Fibonacci::new(5, m31!(443693538));
+        let trace = fibonacci_program.get_trace();
         let trace_poly = trace.interpolate();
         let trace_eval =
             trace_poly.evaluate(CanonicCoset::new(trace_poly.log_size() + 1).circle_domain());
@@ -109,7 +109,7 @@ mod tests {
 
         let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
         let component_traces = vec![trace];
-        let composition_polynomial_poly = fib
+        let composition_polynomial_poly = fibonacci_program
             .air
             .compute_composition_polynomial(random_coeff, &component_traces);
 
@@ -117,7 +117,7 @@ mod tests {
         // what we expect.
         let point = CirclePoint::<SecureField>::get_point(98989892);
 
-        let points = fib.air.mask_points(point);
+        let points = fibonacci_program.air.mask_points(point);
         let mask_values = zip(&component_traces[0].polys, &points[0])
             .map(|(poly, points)| {
                 points
@@ -128,7 +128,7 @@ mod tests {
             .collect_vec();
 
         let mut evaluation_accumulator = PointEvaluationAccumulator::new(random_coeff);
-        fib.air.component.evaluate_constraint_quotients_at_point(
+        fibonacci_program.air.component.evaluate_constraint_quotients_at_point(
             point,
             &mask_values,
             &mut evaluation_accumulator,
