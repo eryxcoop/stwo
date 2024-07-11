@@ -150,14 +150,12 @@ mod tests {
         let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
         let point = CirclePoint::<SecureField>::get_point(98989892);
         
-        let composition_polynomial = fibonacci_program
-            .air
+        let composition_polynomial = fibonacci_program.air
             .compute_composition_polynomial(random_coeff, &component_traces.evaluate());
-
-        let value = composition_polynomial.eval_at_point(point);
 
         // Evaluate this polynomial at another point out of the evaluation domain and compare to
         // what we expect.
+        let value = composition_polynomial.eval_at_point(point);
         
         let oods_value = evaluate_constraint_quotients_at_point(point, fibonacci_program, &component_traces.evaluate(), random_coeff);
         assert_eq!(oods_value, value);
