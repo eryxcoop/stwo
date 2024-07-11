@@ -123,22 +123,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_composition_polynomial_is_low_degree() {
-        let fibonacci_program = Fibonacci::new(5, m31!(443693538));
-        
-        let fibonacci_trace = FibonacciTrace::new(&fibonacci_program);
-        let component_traces = fibonacci_trace.component_traces();
-
-        let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
-        let composition_polynomial_poly = fibonacci_program
-            .air
-            .compute_composition_polynomial(random_coeff, &component_traces);
-
-        // Evaluate this polynomial at another point out of the evaluation domain and compare to
-        // what we expect.
-        let point = CirclePoint::<SecureField>::get_point(98989892);
-
+    fn xxx(point: CirclePoint<SecureField>, fibonacci_program: Fibonacci, component_traces: &Vec<ComponentTrace<'_, CpuBackend>>, random_coeff: SecureField) -> SecureField {
         let points = fibonacci_program.air.mask_points(point);
         let mask_values = zip(&component_traces[0].polys, &points[0])
             .map(|(poly, points)| {
@@ -155,7 +140,26 @@ mod tests {
             &mask_values,
             &mut evaluation_accumulator,
         );
-        let oods_value = evaluation_accumulator.finalize();
+        evaluation_accumulator.finalize()
+    }
+
+    #[test]
+    fn test_composition_polynomial_is_low_degree() {
+        let fibonacci_program = Fibonacci::new(5, m31!(443693538));
+        
+        let fibonacci_trace = FibonacciTrace::new(&fibonacci_program);
+        let component_traces = fibonacci_trace.component_traces();
+
+        let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
+        let composition_polynomial_poly = fibonacci_program
+            .air
+            .compute_composition_polynomial(random_coeff, &component_traces);
+
+        // Evaluate this polynomial at another point out of the evaluation domain and compare to
+        // what we expect.
+        let point = CirclePoint::<SecureField>::get_point(98989892);
+        let oods_value = xxx(point, fibonacci_program, &component_traces, random_coeff);
+
         assert_eq!(oods_value, composition_polynomial_poly.eval_at_point(point));
     }
 
