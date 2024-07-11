@@ -79,10 +79,12 @@ mod tests {
     use super::Fibonacci;
     use crate::core::air::accumulation::PointEvaluationAccumulator;
     use crate::core::air::{AirExt, AirProverExt, Component, ComponentTrace};
+    use crate::core::backend::CpuBackend;
     use crate::core::circle::CirclePoint;
     use crate::core::fields::m31::BaseField;
     use crate::core::fields::qm31::SecureField;
-    use crate::core::poly::circle::CanonicCoset;
+    use crate::core::poly::circle::{CanonicCoset, CircleEvaluation, CirclePoly};
+    use crate::core::poly::BitReversedOrder;
     use crate::core::prover::VerificationError;
     use crate::core::queries::Queries;
     use crate::core::utils::bit_reverse;
@@ -98,17 +100,37 @@ mod tests {
         queries
     }
 
+    struct FibonacciTrace {
+        trace_poly: CirclePoly<CpuBackend>,
+        trace_eval: CircleEvaluation<CpuBackend, BaseField, BitReversedOrder>
+    }
+
+    impl FibonacciTrace {
+        fn new(fibonacci_program: & Fibonacci) -> Self {
+            let trace = fibonacci_program.get_trace();
+            let trace_poly = trace.interpolate();
+            let trace_eval =
+                trace_poly.evaluate(CanonicCoset::new(trace_poly.log_size() + 1).circle_domain());
+            
+            Self {
+                trace_poly,
+                trace_eval
+            }
+        }
+
+        fn component_traces(& self) -> Vec<ComponentTrace<'_, CpuBackend>> {
+            vec![ComponentTrace::new(vec![&self.trace_poly], vec![&self.trace_eval])]
+        }
+    }
+
     #[test]
     fn test_composition_polynomial_is_low_degree() {
         let fibonacci_program = Fibonacci::new(5, m31!(443693538));
-        let trace = fibonacci_program.get_trace();
-        let trace_poly = trace.interpolate();
-        let trace_eval =
-            trace_poly.evaluate(CanonicCoset::new(trace_poly.log_size() + 1).circle_domain());
-        let trace = ComponentTrace::new(vec![&trace_poly], vec![&trace_eval]);
+        
+        let fib_trace = FibonacciTrace::new(&fibonacci_program);
+        let component_traces = fib_trace.component_traces();
 
         let random_coeff = qm31!(2213980, 2213981, 2213982, 2213983);
-        let component_traces = vec![trace];
         let composition_polynomial_poly = fibonacci_program
             .air
             .compute_composition_polynomial(random_coeff, &component_traces);
