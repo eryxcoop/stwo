@@ -153,6 +153,7 @@ mod tests {
         let composition_polynomial = fibonacci_program
             .air
             .compute_composition_polynomial(random_coeff, &component_traces.evaluate());
+
         let value = composition_polynomial.eval_at_point(point);
 
         // Evaluate this polynomial at another point out of the evaluation domain and compare to
