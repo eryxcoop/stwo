@@ -10,6 +10,56 @@ __device__ void mul_cm31(unsigned int *lhs, unsigned int *rhs, unsigned int *out
 
 #endif 
 
+struct cm31 {
+    m31 a;
+    m31 b;
+
+    __device__ __host__ cm31() : a(0), b(0) {}
+    __device__ __host__ cm31(m31 a, m31 b) : a(a), b(b) {}
+
+    __device__ __inline__ cm31 operator*(const cm31& rhs) const {
+        unsigned int ac = a.f * rhs.a.f;
+        unsigned int bd = b.f * rhs.b.f;
+
+        unsigned int ab_t_cd = (a.f + b.f) * (rhs.a.f + rhs.b.f);
+        
+        return cm31(ac - bd, ab_t_cd - (ac + bd));
+    }
+
+    __device__ __inline__ cm31 operator+(const cm31& rhs) const {
+        return cm31(a + rhs.a, b + rhs.b);
+    }
+
+    __device__ __inline__ cm31 operator-(const cm31& rhs) const {
+        return cm31(a - rhs.a, b - rhs.b);
+    }
+};
+
+struct qm31 {
+    cm31 a;
+    cm31 b;
+
+    __device__ __host__ qm31() : a(cm31()), b(cm31()) {}
+    __device__ __host__ qm31(cm31 a, cm31 b) : a(a), b(b) {}
+
+    __device__ __inline__ qm31 operator*(const qm31& rhs) const {
+        cm31 ac, bd, bd_times_1_plus_i, ac_p_bd, ad_p_bc, l; 
+
+        ac = a * rhs.b;
+        bd = b * rhs.b; 
+
+        bd_times_1_plus_i = cm31(bd.a - bd.b, bd.a + bd.b); 
+
+        ac_p_bd = ac + bd; 
+        ad_p_bc = ((a + b) * (rhs.a + rhs.b)) - ac_p_bd;
+
+        l = cm31(ac_p_bd.a + bd_times_1_plus_i.a, ac_p_bd.b + bd_times_1_plus_i.b);
+        return qm31(l, ad_p_bc);
+    }
+};
+
+
+// TODO (Daniel): Eventually replace with struct implementation
 __device__  void mul_cm31(unsigned int *lhs,  unsigned int *rhs,  unsigned int *out) {
     unsigned int ac = mul_m31(lhs[0], rhs[0]);
     unsigned int bd = mul_m31(lhs[1], rhs[1]);

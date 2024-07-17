@@ -15,6 +15,7 @@ use crate::core::backend::Col;
 use crate::core::circle::CirclePoint;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
+#[allow(unused_imports)]
 use crate::core::fields::secure_column::SecureColumn;
 use crate::core::pcs::quotients::{ColumnSampleBatch, QuotientOps};
 use crate::core::poly::circle::{CircleDomain, CircleEvaluation, SecureEvaluation};
@@ -28,42 +29,43 @@ use crate::core::backend::gpu::column::{BaseFieldCudaColumn, SecureFieldCudaColu
 
 impl QuotientOps for GpuBackend {
     fn accumulate_quotients(
-        domain: CircleDomain,
-        columns: &[&CircleEvaluation<Self, BaseField, BitReversedOrder>],
-        random_coeff: SecureField,
-        sample_batches: &[ColumnSampleBatch],
+        _domain: CircleDomain,
+        _columns: &[&CircleEvaluation<Self, BaseField, BitReversedOrder>],
+        _random_coeff: SecureField,
+        _sample_batches: &[ColumnSampleBatch],
     ) -> SecureEvaluation<Self> {
-        let mut values = SecureColumn::<Self>::zeros(domain.size());
-        let quotient_constants = crate::core::backend::simd::quotients::quotient_constants(sample_batches, random_coeff, domain); // Borrow SIMD as temp, change back pub identifier after implementation
+        // let mut values = SecureColumn::<Self>::zeros(domain.size());
+        // let quotient_constants = crate::core::backend::simd::quotients::quotient_constants(sample_batches, random_coeff, domain); // Borrow SIMD as temp, change back pub identifier after implementation
 
-        // TODO(spapini): bit reverse iterator.
-        for vec_row in 0..1 << (domain.log_size() - LOG_N_LANES) {
-            // TODO(spapini): Optimize this, for the small number of columns case.
-            let points = std::array::from_fn(|i| {
-                domain.at(bit_reverse_index(
-                    (vec_row << LOG_N_LANES) + i,
-                    domain.log_size(),
-                ))
-            });
-            let domain_points_x = crate::core::backend::simd::m31::PackedBaseField::from_array(points.map(|p| p.x));
-            let domain_points_y = crate::core::backend::simd::m31::PackedBaseField::from_array(points.map(|p| p.y));
-            let row_accumulator = accumulate_row_quotients(
-                sample_batches,
-                columns,
-                &quotient_constants,
-                vec_row,
-                (domain_points_x, domain_points_y),
-            );
-            unsafe { values.set_packed(vec_row, row_accumulator) };
-        }
+        // // TODO(spapini): bit reverse iterator.
+        // for vec_row in 0..1 << (domain.log_size() - LOG_N_LANES) {
+        //     // TODO(spapini): Optimize this, for the small number of columns case.
+        //     let points = std::array::from_fn(|i| {
+        //         domain.at(bit_reverse_index(
+        //             (vec_row << LOG_N_LANES) + i,
+        //             domain.log_size(),
+        //         ))
+        //     });
+        //     let domain_points_x = crate::core::backend::simd::m31::PackedBaseField::from_array(points.map(|p| p.x));
+        //     let domain_points_y = crate::core::backend::simd::m31::PackedBaseField::from_array(points.map(|p| p.y));
+        //     let row_accumulator = accumulate_row_quotients(
+        //         sample_batches,
+        //         columns,
+        //         &quotient_constants,
+        //         vec_row,
+        //         (domain_points_x, domain_points_y),
+        //     );
+        //     unsafe { values.set_packed(vec_row, row_accumulator) };
+        // }
 
-        SecureEvaluation { domain, values }
+        // SecureEvaluation { domain, values }
+        todo!()
     }
 }
 
 // TODO(Ohad): no longer using pair_vanishing, remove domain_point_vec and line_coeffs, or write a
 // function that deals with quotients over pair_vanishing polynomials.
-pub fn accumulate_row_quotients(
+pub fn _accumulate_row_quotients(
     sample_batches: &[ColumnSampleBatch],
     columns: &[&CircleEvaluation<SimdBackend, BaseField, BitReversedOrder>],
     quotient_constants: &QuotientConstants<SimdBackend>,
@@ -156,7 +158,6 @@ pub fn accumulate_row_quotients(
 //         .collect()
 // }
 
-// // TODO (Daniel): Deeper into these function calls are functions that are not implemented with CPU, look into GPU implementation
 // fn _quotient_constants(
 //     sample_batches: &[ColumnSampleBatch],
 //     random_coeff: SecureField,

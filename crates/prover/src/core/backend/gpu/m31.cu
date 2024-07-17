@@ -34,3 +34,4 @@ extern "C" __global__ void neg(unsigned int *a, int size) {
         neg_m31(&a[tid]);
     }
 }
+

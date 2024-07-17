@@ -13,6 +13,43 @@ extern "C" __global__ void is_zero(unsigned int *arr, bool *res, int size);
 
 __device__ __constant__ unsigned int MODULUS = (1 << 31) - 1; 
 
+struct m31 {
+    unsigned int f; // field
+
+    __device__ __host__ m31() : f(0) {}
+    __device__ __host__ m31(unsigned int m) : f(m) {}
+
+
+    __device__ inline m31 operator+(const m31& rhs) const {
+        unsigned int out = f + rhs.f; 
+        return m31((unsigned int)min(out, out - MODULUS));
+    }
+
+    __device__ inline m31 operator-(const m31& rhs) const {
+        unsigned int out = f - rhs.f;
+        return m31((unsigned int)min(out, out + MODULUS));
+    }
+
+    __device__ inline m31 operator-() const {
+        return m31(MODULUS - f);
+    }
+
+    __device__ inline m31 operator*(const m31& rhs) const {
+        unsigned long long int a_e, b_e, prod_e;
+        unsigned int prod_lows, prod_highs;
+
+        a_e = (unsigned long long int) f;
+        b_e = (unsigned long long int) rhs.f;
+
+        prod_e = a_e * b_e;
+        prod_lows = (unsigned long long int) prod_e & 0x7FFFFFFF;
+        prod_highs = (unsigned long long int) prod_e >> 31;
+
+        unsigned int out = prod_lows + prod_highs; 
+        return m31((unsigned int) min(out, out - MODULUS));
+    }
+};
+
 // TODO: Check if using Shared memory per block over device for optimizations
 __device__  unsigned int mul_m31(unsigned int lhs, unsigned int rhs) {
     unsigned long long int a_e;
@@ -58,3 +95,6 @@ extern "C" __global__ void is_zero(unsigned int *arr, bool *res, int size) {
     if (tid < size && arr[tid]) 
         *res = false; 
 }
+
+
+// Helpers

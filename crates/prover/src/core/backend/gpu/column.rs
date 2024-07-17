@@ -162,6 +162,51 @@ pub fn load_batch_inverse_ptx(device: &Arc<CudaDevice>) {
         .unwrap();
 }
 
+
+// impl SecureColumn<GpuBackend> {
+//     pub fn packed_len(&self) -> usize {
+//         self.columns[0].data.len()
+//     }
+
+//     /// # Safety
+//     ///
+//     /// `vec_index` must be a valid index.
+//     pub unsafe fn packed_at(&self, vec_index: usize) -> PackedSecureField {
+//         PackedQM31([
+//             PackedCM31([
+//                 *self.columns[0].data.get_unchecked(vec_index),
+//                 *self.columns[1].data.get_unchecked(vec_index),
+//             ]),
+//             PackedCM31([
+//                 *self.columns[2].data.get_unchecked(vec_index),
+//                 *self.columns[3].data.get_unchecked(vec_index),
+//             ]),
+//         ])
+//     }
+
+//     /// # Safety
+//     ///
+//     /// `vec_index` must be a valid index.
+//     pub unsafe fn set_packed(&mut self, vec_index: usize, value: PackedSecureField) {
+//         let PackedQM31([PackedCM31([a, b]), PackedCM31([c, d])]) = value;
+//         *self.columns[0].data.get_unchecked_mut(vec_index) = a;
+//         *self.columns[1].data.get_unchecked_mut(vec_index) = b;
+//         *self.columns[2].data.get_unchecked_mut(vec_index) = c;
+//         *self.columns[3].data.get_unchecked_mut(vec_index) = d;
+//     }
+
+//     pub fn to_vec(&self) -> Vec<SecureField> {
+//         izip!(
+//             self.columns[0].to_cpu(),
+//             self.columns[1].to_cpu(),
+//             self.columns[2].to_cpu(),
+//             self.columns[3].to_cpu(),
+//         )
+//         .map(|(a, b, c, d)| SecureField::from_m31_array([a, b, c, d]))
+//         .collect()
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
