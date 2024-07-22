@@ -16,7 +16,8 @@ use super::CommitmentSchemeProof;
 use crate::core::channel::Channel;
 use crate::core::prover::VerificationError;
 use crate::core::vcs::blake2_hash::Blake2sHash;
-use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
+// use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
+use crate::core::vcs::ops::MerkleHasher;
 use crate::core::vcs::verifier::MerkleVerifier;
 use crate::core::ColumnVec;
 
@@ -24,11 +25,11 @@ type ProofChannel = Blake2sChannel;
 
 /// The verifier side of a FRI polynomial commitment scheme. See [super].
 #[derive(Default)]
-pub struct CommitmentSchemeVerifier {
-    pub trees: TreeVec<MerkleVerifier<Blake2sMerkleHasher>>,
+pub struct CommitmentSchemeVerifier<MH: MerkleHasher> {
+    pub trees: TreeVec<MerkleVerifier<MH>>,
 }
 
-impl CommitmentSchemeVerifier {
+impl <MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -59,7 +60,7 @@ impl CommitmentSchemeVerifier {
     pub fn verify_values(
         &self,
         sampled_points: TreeVec<ColumnVec<Vec<CirclePoint<SecureField>>>>,
-        proof: CommitmentSchemeProof,
+        proof: CommitmentSchemeProof<MH>,
         channel: &mut ProofChannel,
     ) -> Result<(), VerificationError> {
         channel.mix_felts(&proof.sampled_values.clone().flatten_cols());

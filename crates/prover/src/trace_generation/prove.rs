@@ -4,7 +4,8 @@ use tracing::{span, Level};
 use super::{AirTraceGenerator, AirTraceVerifier, BASE_TRACE, INTERACTION_TRACE};
 use crate::core::air::{Air, AirExt, AirProverExt};
 use crate::core::backend::Backend;
-use crate::core::channel::{Blake2sChannel, Channel as _};
+// use crate::core::channel::{Blake2sChannel, Channel};
+use crate::core::channel::Channel as ChannelTrait;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
@@ -14,18 +15,20 @@ use crate::core::poly::BitReversedOrder;
 use crate::core::prover::{
     prove, verify, ProvingError, StarkProof, VerificationError, LOG_BLOWUP_FACTOR,
 };
-use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-use crate::core::vcs::ops::MerkleOps;
+use crate::core::vcs::hasher::Hasher as ChannelHasher;
+// use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
+use crate::core::vcs::ops::{MerkleHasher, MerkleOps};
 use crate::core::{ColumnVec, InteractionElements};
 
-type MerkleHasher = Blake2sMerkleHasher;
-type Channel = Blake2sChannel;
+// type MerkleHasher = Blake2sMerkleHasher;
+// type Channel = Blake2sChannel;
 
-pub fn commit_and_prove<B: Backend + MerkleOps<MerkleHasher>>(
+
+pub fn commit_and_prove<B: Backend + MerkleOps<MH>, MH: MerkleHasher, CH: ChannelHasher>(
     air: &impl AirTraceGenerator<B>,
-    channel: &mut Channel,
+    channel: &mut impl ChannelTrait,
     trace: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-) -> Result<StarkProof, ProvingError> {
+) -> Result<StarkProof<MH, CH>, ProvingError> {
     // Check that traces are not too big.
     for (i, trace) in trace.iter().enumerate() {
         if trace.domain.log_size() + LOG_BLOWUP_FACTOR > MAX_CIRCLE_DOMAIN_LOG_SIZE {
@@ -75,12 +78,12 @@ pub fn commit_and_prove<B: Backend + MerkleOps<MerkleHasher>>(
     )
 }
 
-pub fn evaluate_and_commit_on_trace<B: Backend + MerkleOps<MerkleHasher>>(
+pub fn evaluate_and_commit_on_trace<B: Backend + MerkleOps<H>, H: MerkleHasher>(
     air: &impl AirTraceGenerator<B>,
-    channel: &mut Channel,
+    channel: &mut impl ChannelTrait,
     twiddles: &TwiddleTree<B>,
     trace: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-) -> Result<(CommitmentSchemeProver<B>, InteractionElements), ProvingError> {
+) -> Result<(CommitmentSchemeProver<B, H>, InteractionElements), ProvingError> {
     let mut commitment_scheme = CommitmentSchemeProver::new(LOG_BLOWUP_FACTOR);
     // TODO(spapini): Remove clone.
     let span = span!(Level::INFO, "Trace").entered();
@@ -99,10 +102,10 @@ pub fn evaluate_and_commit_on_trace<B: Backend + MerkleOps<MerkleHasher>>(
     Ok((commitment_scheme, interaction_elements))
 }
 
-pub fn commit_and_verify(
-    proof: StarkProof,
+pub fn commit_and_verify<MH: MerkleHasher, CH: ChannelHasher>(
+    proof: StarkProof<MH, CH>,
     air: &(impl Air + AirTraceVerifier),
-    channel: &mut Channel,
+    channel: &mut impl ChannelTrait,
 ) -> Result<(), VerificationError> {
     // Read trace commitment.
     let mut commitment_scheme = CommitmentSchemeVerifier::new();

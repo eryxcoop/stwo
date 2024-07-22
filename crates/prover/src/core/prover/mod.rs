@@ -10,6 +10,7 @@ use super::pcs::{CommitmentSchemeProof, TreeVec};
 use super::poly::circle::MAX_CIRCLE_DOMAIN_LOG_SIZE;
 use super::poly::twiddles::TwiddleTree;
 use super::proof_of_work::ProofOfWorkVerificationError;
+use super::vcs::ops::MerkleHasher;
 use super::{ColumnVec, InteractionElements, LookupValues};
 use crate::core::air::{Air, AirExt, AirProverExt};
 use crate::core::backend::CpuBackend;
@@ -19,15 +20,15 @@ use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;
-use crate::core::vcs::blake2_hash::Blake2sHasher;
-use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-use crate::core::vcs::hasher::Hasher;
+// use crate::core::vcs::blake2_hash::Blake2sHasher;
+// use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
+use crate::core::vcs::hasher::Hasher as ChannelHasher;
 use crate::core::vcs::ops::MerkleOps;
 use crate::core::vcs::verifier::MerkleVerificationError;
 
-type Channel = Blake2sChannel;
-type ChannelHasher = Blake2sHasher;
-type MerkleHasher = Blake2sMerkleHasher;
+// type Channel = Blake2sChannel;
+// type ChannelHasher = Blake2sHasher;
+// type MerkleHasher = Blake2sMerkleHasher;
 
 pub const LOG_BLOWUP_FACTOR: u32 = 1;
 pub const LOG_LAST_LAYER_DEGREE_BOUND: u32 = 0;
@@ -35,10 +36,10 @@ pub const PROOF_OF_WORK_BITS: u32 = 12;
 pub const N_QUERIES: usize = 3;
 
 #[derive(Debug)]
-pub struct StarkProof {
-    pub commitments: TreeVec<<ChannelHasher as Hasher>::Hash>,
+pub struct StarkProof<MH: MerkleHasher, CH: ChannelHasher> {
+    pub commitments: TreeVec<CH::Hash>,
     pub lookup_values: LookupValues,
-    pub commitment_scheme_proof: CommitmentSchemeProof,
+    pub commitment_scheme_proof: CommitmentSchemeProof<MH>,
 }
 
 #[derive(Debug)]
@@ -49,13 +50,13 @@ pub struct AdditionalProofData {
     pub oods_quotients: Vec<CircleEvaluation<CpuBackend, SecureField, BitReversedOrder>>,
 }
 
-pub fn prove<B: Backend + MerkleOps<MerkleHasher>>(
+pub fn prove<B: Backend + MerkleOps<MH>, MH: MerkleHasher, CH: ChannelHasher>(
     air: &impl AirProver<B>,
-    channel: &mut Channel,
+    channel: &mut impl ChannelTrait,
     interaction_elements: &InteractionElements,
     twiddles: &TwiddleTree<B>,
-    commitment_scheme: &mut CommitmentSchemeProver<B>,
-) -> Result<StarkProof, ProvingError> {
+    commitment_scheme: &mut CommitmentSchemeProver<B, MH>,
+) -> Result<StarkProof<MH, CH>, ProvingError> {
     let component_traces = air.component_traces(&commitment_scheme.trees);
     let lookup_values = air.lookup_values(&component_traces);
 
@@ -109,12 +110,12 @@ pub fn prove<B: Backend + MerkleOps<MerkleHasher>>(
     })
 }
 
-pub fn verify(
+pub fn verify<MH: MerkleHasher, CH: ChannelHasher>(
     air: &impl Air,
     channel: &mut Blake2sChannel,
     interaction_elements: &InteractionElements,
-    commitment_scheme: &mut CommitmentSchemeVerifier,
-    proof: StarkProof,
+    commitment_scheme: &mut CommitmentSchemeVerifier<MH>,
+    proof: StarkProof<MH, CH>,
 ) -> Result<(), VerificationError> {
     let random_coeff = channel.draw_felt();
 

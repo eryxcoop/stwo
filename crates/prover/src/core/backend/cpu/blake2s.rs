@@ -22,3 +22,38 @@ impl MerkleOps<Blake2sMerkleHasher> for CpuBackend {
             .collect()
     }
 }
+
+
+// impl MerkleOps<dyn MerkleHasher> for CpuBackend {
+//     fn commit_on_layer(
+//         log_size: u32,
+//         prev_layer: Option<&Vec<FieldElement252>>,
+//         columns: &[&Vec<BaseField>],
+//     ) -> Vec<FieldElement252> {
+//         (0..(1 << log_size))
+//             .map(|i| {
+//                 Poseidon252MerkleHasher::hash_node(
+//                     prev_layer.map(|prev_layer| (prev_layer[2 * i], prev_layer[2 * i + 1])),
+//                     &columns.iter().map(|column| column[i]).collect_vec(),
+//                 )
+//             })
+//             .collect()
+//     }
+// }
+
+// impl MerkleOps<Poseidon252MerkleHasher> for CpuBackend {
+//     fn commit_on_layer(
+//         log_size: u32,
+//         prev_layer: Option<&Vec<FieldElement252>>,
+//         columns: &[&Vec<BaseField>],
+//     ) -> Vec<FieldElement252> {
+//         (0..(1 << log_size))
+//             .map(|i| {
+//                 Poseidon252MerkleHasher::hash_node(
+//                     prev_layer.map(|prev_layer| (prev_layer[2 * i], prev_layer[2 * i + 1])),
+//                     &columns.iter().map(|column| column[i]).collect_vec(),
+//                 )
+//             })
+//             .collect()
+//     }
+// }

@@ -22,7 +22,7 @@ impl ProofOfWork {
         Self { n_bits }
     }
 
-    pub fn prove(&self, channel: &mut Blake2sChannel) -> ProofOfWorkProof {
+    pub fn prove(&self, channel: &mut impl Channel) -> ProofOfWorkProof {
         let _span = span!(Level::INFO, "Proof of work").entered();
         let seed = channel.get_digest().as_ref().to_vec();
         let proof = self.grind(seed);
