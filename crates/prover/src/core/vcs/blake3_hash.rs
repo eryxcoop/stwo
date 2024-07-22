@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::hasher::Name;
+use super::hasher::{BlakeHasher, Name};
 
 // Wrapper for the blake3 hash type.
 #[derive(Clone, Copy, PartialEq, Default, Eq)]
@@ -54,7 +54,7 @@ impl Name for Blake3Hash {
     const NAME: std::borrow::Cow<'static, str> = std::borrow::Cow::Borrowed("BLAKE3");
 }
 
-impl super::hasher::Hash<u8> for Blake3Hash {}
+impl super::hasher::Hash for Blake3Hash {}
 
 // Wrapper for the blake3 Hashing functionalities.
 #[derive(Clone, Default)]
@@ -62,11 +62,10 @@ pub struct Blake3Hasher {
     state: blake3::Hasher,
 }
 
-impl super::hasher::Hasher for Blake3Hasher {
-    type Hash = Blake3Hash;
+impl BlakeHasher for Blake3Hasher {
     const BLOCK_SIZE: usize = 64;
     const OUTPUT_SIZE: usize = 32;
-    type NativeType = u8;
+    type Hash = Blake3Hash;
 
     fn new() -> Self {
         Self {
@@ -96,7 +95,7 @@ impl super::hasher::Hasher for Blake3Hasher {
 #[cfg(test)]
 mod tests {
     use crate::core::vcs::blake3_hash::Blake3Hasher;
-    use crate::core::vcs::hasher::Hasher;
+    use crate::core::vcs::hasher::BlakeHasher;
 
     #[test]
     fn single_hash_test() {
