@@ -13,9 +13,9 @@ use crate::core::fields::{FieldExpOps, IntoSlice};
 use crate::core::poly::circle::{CanonicCoset, CircleEvaluation};
 use crate::core::poly::BitReversedOrder;
 use crate::core::prover::{ProvingError, StarkProof, VerificationError};
-use crate::core::vcs::blake2_hash::Blake2sHasher;
+use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
 use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-use crate::core::vcs::hasher::Hasher as ChannelHasher;
+use crate::core::vcs::hasher::Hasher as Hasher;
 // use crate::core::vcs::ops::{MerkleHasher, MerkleOps};
 // use crate::core::vcs::ops::MerkleHasher;
 use crate::trace_generation::{commit_and_prove, commit_and_verify};
@@ -24,18 +24,19 @@ pub mod air;
 mod component;
 
 #[derive(Clone)]
-pub struct Fibonacci <CH: ChannelHasher>{
+pub struct Fibonacci<CH: Hasher> {
     pub air: FibonacciAir,
     _marker_channel_hasher: PhantomData<CH>,
-
 }
 
-impl <CH: ChannelHasher> Fibonacci<CH> {
+impl<CH> Fibonacci<CH>
+    where CH: Hasher<Hash = Blake2sHash>
+{
     pub fn new(log_size: u32, claim: BaseField) -> Self {
         let component = FibonacciComponent::new(log_size, claim);
         Self {
             air: FibonacciAir::new(component),
-            _marker_channel_hasher: PhantomData
+            _marker_channel_hasher: PhantomData,
         }
     }
 
@@ -67,7 +68,10 @@ impl <CH: ChannelHasher> Fibonacci<CH> {
         commit_and_prove(&self.air, channel, vec![trace])
     }
 
-    pub fn verify(&self, proof: StarkProof<Blake2sMerkleHasher, CH>) -> Result<(), VerificationError> {
+    pub fn verify(
+        &self,
+        proof: StarkProof<Blake2sMerkleHasher, CH>,
+    ) -> Result<(), VerificationError> {
         let channel = &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[self
             .air
             .component
@@ -76,14 +80,16 @@ impl <CH: ChannelHasher> Fibonacci<CH> {
     }
 }
 
-pub struct MultiFibonacci<CH: ChannelHasher> {
+pub struct MultiFibonacci<CH: Hasher> {
     pub air: MultiFibonacciAir,
     log_sizes: Vec<u32>,
     claims: Vec<BaseField>,
-    _marker_channel_hasher: PhantomData<CH>
+    _marker_channel_hasher: PhantomData<CH>,
 }
 
-impl <CH: ChannelHasher> MultiFibonacci<CH> {
+impl<CH> MultiFibonacci<CH>
+    where CH: Hasher<Hash = Blake2sHash>
+{
     pub fn new(log_sizes: Vec<u32>, claims: Vec<BaseField>) -> Self {
         assert!(!log_sizes.is_empty());
         assert_eq!(log_sizes.len(), claims.len());
@@ -92,7 +98,7 @@ impl <CH: ChannelHasher> MultiFibonacci<CH> {
             air,
             log_sizes,
             claims,
-            _marker_channel_hasher: PhantomData
+            _marker_channel_hasher: PhantomData,
         }
     }
 
@@ -112,7 +118,10 @@ impl <CH: ChannelHasher> MultiFibonacci<CH> {
         commit_and_prove(&self.air, channel, trace)
     }
 
-    pub fn verify(&self, proof: StarkProof<Blake2sMerkleHasher, CH>) -> Result<(), VerificationError> {
+    pub fn verify(
+        &self,
+        proof: StarkProof<Blake2sMerkleHasher, CH>,
+    ) -> Result<(), VerificationError> {
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&self.claims)));
         commit_and_verify(proof, &self.air, channel)
@@ -266,7 +275,8 @@ mod tests {
         let trace = fib_trace_generator.write_trace();
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[CLAIM])));
-        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHasher> = commit_and_prove(&fib_trace_generator, channel, trace).unwrap();
+        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHasher> =
+            commit_and_prove(&fib_trace_generator, channel, trace).unwrap();
 
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[CLAIM])));
@@ -319,7 +329,8 @@ mod tests {
 
     #[test]
     fn test_rectangular_multi_fibonacci() {
-        let multi_fib = MultiFibonacci::<Blake2sHasher>::new(vec![5; 16], vec![m31!(443693538); 16]);
+        let multi_fib =
+            MultiFibonacci::<Blake2sHasher>::new(vec![5; 16], vec![m31!(443693538); 16]);
         let proof = multi_fib.prove().unwrap();
         multi_fib.verify(proof).unwrap();
     }

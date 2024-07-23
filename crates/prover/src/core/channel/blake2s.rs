@@ -1,6 +1,6 @@
 use std::iter;
 
-use super::{Channel, ChannelTime};
+use super::{Channel, ChannelTime, Serialize};
 use crate::core::fields::m31::{BaseField, N_BYTES_FELT, P};
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::secure_column::SECURE_EXTENSION_DEGREE;
@@ -115,6 +115,12 @@ impl Channel for Blake2sChannel {
 
         self.channel_time.inc_sent();
         Blake2sHasher::hash(&hash_input).into()
+    }
+}
+
+impl Serialize for Blake2sHash {
+    fn to_bytes(self) -> Vec<u8> {
+        self.as_ref().to_vec()
     }
 }
 

@@ -26,7 +26,7 @@ impl ChannelTime {
 }
 
 pub trait Channel {
-    type Digest;
+    type Digest: Serialize;
 
     const BYTES_PER_HASH: usize;
 
@@ -44,4 +44,8 @@ pub trait Channel {
     fn draw_felts(&mut self, n_felts: usize) -> Vec<SecureField>;
     /// Returns a vector of random bytes of length `BYTES_PER_HASH`.
     fn draw_random_bytes(&mut self) -> Vec<u8>;
+}
+
+pub trait Serialize {
+    fn to_bytes(self) -> Vec<u8>;
 }

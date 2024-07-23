@@ -23,7 +23,6 @@ impl MerkleOps<Blake2sMerkleHasher> for CpuBackend {
     }
 }
 
-
 // impl MerkleOps<dyn MerkleHasher> for CpuBackend {
 //     fn commit_on_layer(
 //         log_size: u32,

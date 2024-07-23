@@ -4,6 +4,7 @@ use tracing::{span, Level};
 
 use super::air::AirProver;
 use super::backend::Backend;
+use super::channel::Serialize;
 use super::fields::secure_column::SECURE_EXTENSION_DEGREE;
 use super::fri::FriVerificationError;
 use super::pcs::{CommitmentSchemeProof, TreeVec};
@@ -14,15 +15,16 @@ use super::vcs::ops::MerkleHasher;
 use super::{ColumnVec, InteractionElements, LookupValues};
 use crate::core::air::{Air, AirExt, AirProverExt};
 use crate::core::backend::CpuBackend;
-use crate::core::channel::{Blake2sChannel, Channel as ChannelTrait};
+use crate::core::channel::Channel as ChannelTrait;
 use crate::core::circle::CirclePoint;
 use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;
+use crate::core::vcs::hasher::Hash;
 // use crate::core::vcs::blake2_hash::Blake2sHasher;
 // use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-use crate::core::vcs::hasher::Hasher as ChannelHasher;
+use crate::core::vcs::hasher::Hasher;
 use crate::core::vcs::ops::MerkleOps;
 use crate::core::vcs::verifier::MerkleVerificationError;
 
@@ -36,7 +38,7 @@ pub const PROOF_OF_WORK_BITS: u32 = 12;
 pub const N_QUERIES: usize = 3;
 
 #[derive(Debug)]
-pub struct StarkProof<MH: MerkleHasher, CH: ChannelHasher> {
+pub struct StarkProof<MH: MerkleHasher, CH: Hasher> {
     pub commitments: TreeVec<CH::Hash>,
     pub lookup_values: LookupValues,
     pub commitment_scheme_proof: CommitmentSchemeProof<MH>,
@@ -50,13 +52,20 @@ pub struct AdditionalProofData {
     pub oods_quotients: Vec<CircleEvaluation<CpuBackend, SecureField, BitReversedOrder>>,
 }
 
-pub fn prove<B: Backend + MerkleOps<MH>, MH: MerkleHasher, CH: ChannelHasher>(
+pub fn prove<B: Backend + MerkleOps<MH>, MH, C, CH, H, N>(
     air: &impl AirProver<B>,
-    channel: &mut impl ChannelTrait,
+    channel: &mut C,
     interaction_elements: &InteractionElements,
     twiddles: &TwiddleTree<B>,
     commitment_scheme: &mut CommitmentSchemeProver<B, MH>,
-) -> Result<StarkProof<MH, CH>, ProvingError> {
+) -> Result<StarkProof<MH, CH>, ProvingError>
+where
+    CH: Hasher<Hash = H>,
+    C: ChannelTrait<Digest = H>,
+    H: Hash<N>,
+    N: Sized + Eq,
+    MH: MerkleHasher<Hash = H>,
+{
     let component_traces = air.component_traces(&commitment_scheme.trees);
     let lookup_values = air.lookup_values(&component_traces);
 
@@ -110,13 +119,20 @@ pub fn prove<B: Backend + MerkleOps<MH>, MH: MerkleHasher, CH: ChannelHasher>(
     })
 }
 
-pub fn verify<MH: MerkleHasher, CH: ChannelHasher>(
+pub fn verify<MH, C: ChannelTrait, CH, H, N>(
     air: &impl Air,
-    channel: &mut Blake2sChannel,
+    channel: &mut C,
     interaction_elements: &InteractionElements,
     commitment_scheme: &mut CommitmentSchemeVerifier<MH>,
     proof: StarkProof<MH, CH>,
-) -> Result<(), VerificationError> {
+) -> Result<(), VerificationError>
+where
+    MH: MerkleHasher<Hash = H>,
+    C: ChannelTrait<Digest = H>,
+    H: Serialize + Hash<N>,
+    N: Sized + Eq,
+    CH: Hasher<Hash = H>,
+{
     let random_coeff = channel.draw_felt();
 
     // Read composition polynomial commitment.

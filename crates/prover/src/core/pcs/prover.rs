@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use itertools::Itertools;
 use tracing::{span, Level};
 
-use super::super::channel::Blake2sChannel;
+// use super::super::channel::Blake2sChannel;
 use super::super::circle::CirclePoint;
 use super::super::fields::m31::BaseField;
 use super::super::fields::qm31::SecureField;
@@ -21,13 +21,13 @@ use crate::core::backend::Backend;
 use crate::core::channel::Channel as ChannelTrait;
 use crate::core::poly::circle::{CircleEvaluation, CirclePoly};
 use crate::core::poly::twiddles::TwiddleTree;
-use crate::core::vcs::blake2_hash::Blake2sHash;
+// use crate::core::vcs::blake2_hash::Blake2sHash;
 // use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
 use crate::core::vcs::ops::{MerkleHasher, MerkleOps};
 use crate::core::vcs::prover::{MerkleDecommitment, MerkleProver};
 
 // type MerkleHasher = Blake2sMerkleHasher;
-type ProofChannel = Blake2sChannel;
+// type ProofChannel = Blake2sChannel;
 
 /// The prover side of a FRI polynomial commitment scheme. See [super].
 pub struct CommitmentSchemeProver<B: Backend + MerkleOps<H>, H: MerkleHasher> {
@@ -118,8 +118,7 @@ impl<B: Backend + MerkleOps<H>, H: MerkleHasher> CommitmentSchemeProver<B, H> {
 
         // Run FRI commitment phase on the oods quotients.
         let fri_config = FriConfig::new(LOG_LAST_LAYER_DEGREE_BOUND, LOG_BLOWUP_FACTOR, N_QUERIES);
-        let fri_prover =
-            FriProver::<B, H>::commit(channel, fri_config, &quotients, twiddles);
+        let fri_prover = FriProver::<B, H>::commit(channel, fri_config, &quotients, twiddles);
 
         // Proof of work.
         let proof_of_work = ProofOfWork::new(PROOF_OF_WORK_BITS).prove(channel);

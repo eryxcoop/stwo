@@ -1,8 +1,7 @@
 use thiserror::Error;
 use tracing::{span, Level};
 
-use super::channel::Blake2sChannel;
-use crate::core::channel::Channel;
+use crate::core::channel::{Channel, Serialize};
 use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
 use crate::core::vcs::hasher::Hasher;
 
@@ -24,7 +23,7 @@ impl ProofOfWork {
 
     pub fn prove(&self, channel: &mut impl Channel) -> ProofOfWorkProof {
         let _span = span!(Level::INFO, "Proof of work").entered();
-        let seed = channel.get_digest().as_ref().to_vec();
+        let seed = channel.get_digest().to_bytes();
         let proof = self.grind(seed);
         channel.mix_nonce(proof.nonce);
         proof
@@ -32,10 +31,10 @@ impl ProofOfWork {
 
     pub fn verify(
         &self,
-        channel: &mut Blake2sChannel,
+        channel: &mut impl Channel,
         proof: &ProofOfWorkProof,
     ) -> Result<(), ProofOfWorkVerificationError> {
-        let seed = channel.get_digest().as_ref().to_vec();
+        let seed = channel.get_digest().to_bytes();
         let verified = check_leading_zeros(
             self.hash_with_nonce(&seed, proof.nonce).as_ref(),
             self.n_bits,
