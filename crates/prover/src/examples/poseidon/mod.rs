@@ -13,7 +13,7 @@ use crate::core::air::{Air, AirProver, Component, ComponentProver, ComponentTrac
 use crate::core::backend::simd::m31::{PackedBaseField, PackedM31, LOG_N_LANES};
 use crate::core::backend::simd::SimdBackend;
 use crate::core::backend::{Col, Column};
-use crate::core::channel::{Channel};
+use crate::core::channel::Channel;
 use crate::core::circle::CirclePoint;
 use crate::core::constraints::coset_vanishing;
 use crate::core::fields::m31::BaseField;

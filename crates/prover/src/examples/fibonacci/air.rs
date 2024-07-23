@@ -3,7 +3,7 @@ use itertools::{zip_eq, Itertools};
 use super::component::{FibonacciComponent, FibonacciInput, FibonacciTraceGenerator};
 use crate::core::air::{Air, AirProver, Component, ComponentProver};
 use crate::core::backend::CpuBackend;
-use crate::core::channel::{Channel};
+use crate::core::channel::Channel;
 use crate::core::fields::m31::BaseField;
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;

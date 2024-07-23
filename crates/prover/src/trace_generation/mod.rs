@@ -7,7 +7,7 @@ use registry::ComponentGenerationRegistry;
 
 use crate::core::air::{AirProver, Component};
 use crate::core::backend::Backend;
-use crate::core::channel::{Channel};
+use crate::core::channel::Channel;
 use crate::core::fields::m31::BaseField;
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;

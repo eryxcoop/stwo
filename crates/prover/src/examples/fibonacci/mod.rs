@@ -15,9 +15,7 @@ use crate::core::poly::BitReversedOrder;
 use crate::core::prover::{ProvingError, StarkProof, VerificationError};
 use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
 use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-use crate::core::vcs::hasher::Hasher as Hasher;
-// use crate::core::vcs::ops::{MerkleHasher, MerkleOps};
-// use crate::core::vcs::ops::MerkleHasher;
+use crate::core::vcs::hasher::Hasher;
 use crate::trace_generation::{commit_and_prove, commit_and_verify};
 
 pub mod air;
@@ -30,7 +28,8 @@ pub struct Fibonacci<CH: Hasher> {
 }
 
 impl<CH> Fibonacci<CH>
-    where CH: Hasher<Hash = Blake2sHash>
+where
+    CH: Hasher<Hash = Blake2sHash>,
 {
     pub fn new(log_size: u32, claim: BaseField) -> Self {
         let component = FibonacciComponent::new(log_size, claim);
@@ -88,7 +87,8 @@ pub struct MultiFibonacci<CH: Hasher> {
 }
 
 impl<CH> MultiFibonacci<CH>
-    where CH: Hasher<Hash = Blake2sHash>
+where
+    CH: Hasher<Hash = Blake2sHash>,
 {
     pub fn new(log_sizes: Vec<u32>, claims: Vec<BaseField>) -> Self {
         assert!(!log_sizes.is_empty());

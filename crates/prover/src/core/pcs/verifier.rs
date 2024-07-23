@@ -2,7 +2,6 @@ use std::iter::zip;
 
 use itertools::Itertools;
 
-// use super::super::channel::Blake2sChannel;
 use super::super::circle::CirclePoint;
 use super::super::fields::qm31::SecureField;
 use super::super::fri::{CirclePolyDegreeBound, FriConfig, FriVerifier};
@@ -15,13 +14,9 @@ use super::utils::TreeVec;
 use super::CommitmentSchemeProof;
 use crate::core::channel::{Channel as ChannelTrait, Serialize};
 use crate::core::prover::VerificationError;
-// use crate::core::vcs::blake2_hash::Blake2sHash;
-// use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
 use crate::core::vcs::ops::MerkleHasher;
 use crate::core::vcs::verifier::MerkleVerifier;
 use crate::core::ColumnVec;
-
-// type ProofChannel = Blake2sChannel;
 
 /// The verifier side of a FRI polynomial commitment scheme. See [super].
 #[derive(Default)]

@@ -22,15 +22,9 @@ use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;
 use crate::core::vcs::hasher::Hash;
-// use crate::core::vcs::blake2_hash::Blake2sHasher;
-// use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
 use crate::core::vcs::hasher::Hasher;
 use crate::core::vcs::ops::MerkleOps;
 use crate::core::vcs::verifier::MerkleVerificationError;
-
-// type Channel = Blake2sChannel;
-// type ChannelHasher = Blake2sHasher;
-// type MerkleHasher = Blake2sMerkleHasher;
 
 pub const LOG_BLOWUP_FACTOR: u32 = 1;
 pub const LOG_LAST_LAYER_DEGREE_BOUND: u32 = 0;
@@ -119,7 +113,7 @@ where
     })
 }
 
-pub fn verify<MH, C: ChannelTrait, CH, H, N>(
+pub fn verify<MH, C, CH, H, N>(
     air: &impl Air,
     channel: &mut C,
     interaction_elements: &InteractionElements,

@@ -11,7 +11,7 @@ use super::trace_gen::write_trace_row;
 use crate::core::air::accumulation::{ColumnAccumulator, DomainEvaluationAccumulator};
 use crate::core::air::{AirProver, Component, ComponentProver, ComponentTrace};
 use crate::core::backend::CpuBackend;
-use crate::core::channel::{Channel};
+use crate::core::channel::Channel;
 use crate::core::circle::Coset;
 use crate::core::constraints::{coset_vanishing, point_excluder};
 use crate::core::fields::m31::BaseField;
