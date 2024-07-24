@@ -2,6 +2,7 @@ use thiserror::Error;
 use tracing::{span, Level};
 
 use super::vcs::blake2_hash::Blake2sHasher;
+use super::vcs::hasher::BlakeHasher;
 use crate::core::channel::{Channel, Serialize};
 use crate::core::vcs::blake2_hash::Blake2sHash;
 

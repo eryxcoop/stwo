@@ -3,6 +3,8 @@ use std::fmt;
 use blake2::{Blake2s256, Digest};
 use bytemuck::{Pod, Zeroable};
 
+use super::hasher::BlakeHasher;
+
 // Wrapper for the blake2s hash type.
 #[repr(C, align(32))]
 #[derive(Clone, Copy, PartialEq, Default, Eq, Pod, Zeroable)]
@@ -62,7 +64,7 @@ impl super::hasher::Name for Blake2sHash {
     const NAME: std::borrow::Cow<'static, str> = std::borrow::Cow::Borrowed("BLAKE2");
 }
 
-impl super::hasher::Hash<u8> for Blake2sHash {}
+impl super::hasher::Hash for Blake2sHash {}
 
 // Wrapper for the blake2s Hashing functionalities.
 #[derive(Clone, Debug, Default)]
@@ -70,50 +72,38 @@ pub struct Blake2sHasher {
     state: Blake2s256,
 }
 
-impl Blake2sHasher {
-    // const BLOCK_SIZE: usize = 64;
-    // const OUTPUT_SIZE: usize = 32;
+impl BlakeHasher for Blake2sHasher {
+    const BLOCK_SIZE: usize = 64;
+    const OUTPUT_SIZE: usize = 32;
+    type Hash = Blake2sHash;
 
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             state: Blake2s256::new(),
         }
     }
 
-    fn _reset(&mut self) {
+    fn reset(&mut self) {
         blake2::Digest::reset(&mut self.state);
     }
 
-    pub fn update(&mut self, data: &[u8]) {
+    fn update(&mut self, data: &[u8]) {
         blake2::Digest::update(&mut self.state, data);
     }
 
-    pub fn finalize(self) -> Blake2sHash {
+    fn finalize(self) -> Blake2sHash {
         Blake2sHash(self.state.finalize().into())
     }
 
-    #[allow(unused)]
     fn finalize_reset(&mut self) -> Blake2sHash {
         Blake2sHash(self.state.finalize_reset().into())
-    }
-
-    pub fn concat_and_hash(v1: &Blake2sHash, v2: &Blake2sHash) -> Blake2sHash {
-        let mut hasher = Self::new();
-        hasher.update(v1.as_ref());
-        hasher.update(v2.as_ref());
-        hasher.finalize()
-    }
-
-    pub fn hash(data: &[u8]) -> Blake2sHash {
-        let mut hasher = Self::new();
-        hasher.update(data);
-        hasher.finalize()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Blake2sHasher;
+    use crate::core::vcs::hasher::BlakeHasher;
 
     #[test]
     fn single_hash_test() {
