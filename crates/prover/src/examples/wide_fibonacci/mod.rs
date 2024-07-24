@@ -26,7 +26,7 @@ mod tests {
     use crate::core::utils::{
         bit_reverse, circle_domain_order_to_coset_order, shifted_secure_combination,
     };
-    use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
+    use crate::core::vcs::blake2_hash::Blake2sHasher;
     use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
     use crate::core::vcs::hasher::BlakeHasher;
     use crate::core::vcs::poseidon252_merkle::Poseidon252MerkleHasher;
@@ -237,7 +237,7 @@ mod tests {
         let air = WideFibAir { component };
         let prover_channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[])));
-        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHash> =
+        let proof: StarkProof<Blake2sMerkleHasher> =
             commit_and_prove(&air, prover_channel, trace).unwrap();
 
         let verifier_channel =
@@ -271,7 +271,7 @@ mod tests {
             .collect_vec();
         let air = WideFibAir { component };
         let prover_channel = &mut Poseidon252Channel::new(FieldElement252::default());
-        let proof: StarkProof<Poseidon252MerkleHasher, FieldElement252> =
+        let proof: StarkProof<Poseidon252MerkleHasher> =
             commit_and_prove(&air, prover_channel, trace).unwrap();
 
         let verifier_channel = &mut Poseidon252Channel::new(FieldElement252::default());

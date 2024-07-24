@@ -30,8 +30,8 @@ pub const PROOF_OF_WORK_BITS: u32 = 12;
 pub const N_QUERIES: usize = 3;
 
 #[derive(Debug)]
-pub struct StarkProof<MH: MerkleHasher, H: Hash> {
-    pub commitments: TreeVec<H>,
+pub struct StarkProof<MH: MerkleHasher> {
+    pub commitments: TreeVec<MH::Hash>,
     pub lookup_values: LookupValues,
     pub commitment_scheme_proof: CommitmentSchemeProof<MH>,
 }
@@ -50,7 +50,7 @@ pub fn prove<B: Backend + MerkleOps<MH>, MH, C, H>(
     interaction_elements: &InteractionElements,
     twiddles: &TwiddleTree<B>,
     commitment_scheme: &mut CommitmentSchemeProver<B, MH>,
-) -> Result<StarkProof<MH, H>, ProvingError>
+) -> Result<StarkProof<MH>, ProvingError>
 where
     C: ChannelTrait<Digest = H>,
     H: Hash,
@@ -114,7 +114,7 @@ pub fn verify<MH, C>(
     channel: &mut C,
     interaction_elements: &InteractionElements,
     commitment_scheme: &mut CommitmentSchemeVerifier<MH>,
-    proof: StarkProof<MH, MH::Hash>,
+    proof: StarkProof<MH>,
 ) -> Result<(), VerificationError>
 where
     MH: MerkleHasher,

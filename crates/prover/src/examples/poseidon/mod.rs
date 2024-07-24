@@ -451,7 +451,7 @@ mod tests {
     use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier, TreeVec};
     use crate::core::poly::circle::{CanonicCoset, PolyOps};
     use crate::core::prover::{prove, verify, StarkProof, LOG_BLOWUP_FACTOR};
-    use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
+    use crate::core::vcs::blake2_hash::Blake2sHasher;
     use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
     use crate::core::vcs::hasher::BlakeHasher;
     use crate::core::InteractionElements;
@@ -555,7 +555,7 @@ mod tests {
         // Prove constraints.
         let component = PoseidonComponent { log_n_rows };
         let air = PoseidonAir { component };
-        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHash> = prove(
+        let proof: StarkProof<Blake2sMerkleHasher> = prove(
             &air,
             channel,
             &InteractionElements::default(),

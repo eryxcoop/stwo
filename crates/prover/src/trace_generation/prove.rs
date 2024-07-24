@@ -22,7 +22,7 @@ pub fn commit_and_prove<B, MH, C, H>(
     air: &impl AirTraceGenerator<B>,
     channel: &mut C,
     trace: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-) -> Result<StarkProof<MH, H>, ProvingError>
+) -> Result<StarkProof<MH>, ProvingError>
 where
     B: Backend + MerkleOps<MH>,
     C: ChannelTrait<Digest = H>,
@@ -108,7 +108,7 @@ where
 }
 
 pub fn commit_and_verify<MH, C, H>(
-    proof: StarkProof<MH, H>,
+    proof: StarkProof<MH>,
     air: &(impl Air + AirTraceVerifier),
     channel: &mut C,
 ) -> Result<(), VerificationError>

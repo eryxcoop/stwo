@@ -263,7 +263,7 @@ mod tests {
     use crate::core::fields::m31::BaseField;
     use crate::core::fields::IntoSlice;
     use crate::core::prover::StarkProof;
-    use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
+    use crate::core::vcs::blake2_hash::Blake2sHasher;
     use crate::core::vcs::hasher::BlakeHasher;
     use crate::examples::wide_fibonacci::component::LOG_N_COLUMNS;
     use crate::examples::wide_fibonacci::simd::{gen_trace, SimdWideFibAir, SimdWideFibComponent};
@@ -287,7 +287,7 @@ mod tests {
         span.exit();
         let channel = &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[])));
         let air = SimdWideFibAir { component };
-        let proof: StarkProof<_, Blake2sHash> = commit_and_prove(&air, channel, trace).unwrap();
+        let proof: StarkProof<_> = commit_and_prove(&air, channel, trace).unwrap();
 
         let channel = &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[])));
         commit_and_verify(proof, &air, channel).unwrap();

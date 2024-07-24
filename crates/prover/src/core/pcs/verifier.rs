@@ -40,7 +40,7 @@ impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
     pub fn commit<C>(&mut self, commitment: C::Digest, log_sizes: &[u32], channel: &mut C)
     where
         C: ChannelTrait,
-        MH: MerkleHasher<Hash = C::Digest>
+        MH: MerkleHasher<Hash = C::Digest>,
     {
         channel.mix_digest(commitment);
         let extended_log_sizes = log_sizes
@@ -59,7 +59,7 @@ impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
     ) -> Result<(), VerificationError>
     where
         C: ChannelTrait,
-        MH: MerkleHasher<Hash = C::Digest>
+        MH: MerkleHasher<Hash = C::Digest>,
     {
         channel.mix_felts(&proof.sampled_values.clone().flatten_cols());
         let random_coeff = channel.draw_felt();
