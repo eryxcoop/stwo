@@ -7,6 +7,7 @@ use super::{Channel, ChannelTime, Serialize};
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::secure_column::SECURE_EXTENSION_DEGREE;
+use crate::core::vcs::hasher::{Hash, Name};
 
 pub const BYTES_PER_FELT252: usize = 31;
 pub const FELTS_PER_HASH: usize = 8;
@@ -127,6 +128,11 @@ impl Serialize for FieldElement252 {
         self.as_ref().to_bytes_be().to_vec()
     }
 }
+
+impl Name for FieldElement252 {
+    const NAME: std::borrow::Cow<'static, str> = std::borrow::Cow::Borrowed("Poseidon252");
+}
+impl Hash for FieldElement252 {}
 
 #[cfg(test)]
 mod tests {

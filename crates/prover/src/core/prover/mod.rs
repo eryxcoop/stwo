@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use itertools::Itertools;
 use thiserror::Error;
 use tracing::{span, Level};
@@ -33,11 +31,10 @@ pub const PROOF_OF_WORK_BITS: u32 = 12;
 pub const N_QUERIES: usize = 3;
 
 #[derive(Debug)]
-pub struct StarkProof<MH: MerkleHasher, H: Hash<N>, N: Eq + Sized> {
+pub struct StarkProof<MH: MerkleHasher, H: Hash> {
     pub commitments: TreeVec<H>,
     pub lookup_values: LookupValues,
     pub commitment_scheme_proof: CommitmentSchemeProof<MH>,
-    _arg_native_type: PhantomData<N>,
 }
 
 #[derive(Debug)]
@@ -48,17 +45,16 @@ pub struct AdditionalProofData {
     pub oods_quotients: Vec<CircleEvaluation<CpuBackend, SecureField, BitReversedOrder>>,
 }
 
-pub fn prove<B: Backend + MerkleOps<MH>, MH, C, H, N>(
+pub fn prove<B: Backend + MerkleOps<MH>, MH, C, H>(
     air: &impl AirProver<B>,
     channel: &mut C,
     interaction_elements: &InteractionElements,
     twiddles: &TwiddleTree<B>,
     commitment_scheme: &mut CommitmentSchemeProver<B, MH>,
-) -> Result<StarkProof<MH, H, N>, ProvingError>
+) -> Result<StarkProof<MH, H>, ProvingError>
 where
     C: ChannelTrait<Digest = H>,
-    H: Hash<N>,
-    N: Sized + Eq,
+    H: Hash,
     MH: MerkleHasher<Hash = H>,
 {
     let component_traces = air.component_traces(&commitment_scheme.trees);
@@ -111,22 +107,20 @@ where
         commitments: commitment_scheme.roots(),
         lookup_values,
         commitment_scheme_proof,
-        _arg_native_type: PhantomData,
     })
 }
 
-pub fn verify<MH, C, H, N>(
+pub fn verify<MH, C, H>(
     air: &impl Air,
     channel: &mut C,
     interaction_elements: &InteractionElements,
     commitment_scheme: &mut CommitmentSchemeVerifier<MH>,
-    proof: StarkProof<MH, H, N>,
+    proof: StarkProof<MH, H>,
 ) -> Result<(), VerificationError>
 where
     MH: MerkleHasher<Hash = H>,
     C: ChannelTrait<Digest = H>,
-    H: Serialize + Hash<N>,
-    N: Sized + Eq,
+    H: Serialize + Hash,
 {
     let random_coeff = channel.draw_felt();
 

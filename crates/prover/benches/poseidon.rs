@@ -4,6 +4,7 @@ use stwo_prover::core::fields::m31::BaseField;
 use stwo_prover::core::fields::IntoSlice;
 use stwo_prover::core::prover::StarkProof;
 use stwo_prover::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
+use stwo_prover::core::vcs::hasher::BlakeHasher;
 use stwo_prover::examples::poseidon::{gen_trace, PoseidonAir, PoseidonComponent};
 use stwo_prover::trace_generation::commit_and_prove;
 
@@ -12,7 +13,7 @@ pub fn simd_poseidon(c: &mut Criterion) {
     let mut group = c.benchmark_group("poseidon2");
     group.throughput(Throughput::Elements(1u64 << (LOG_N_ROWS + 3)));
     group.bench_function(format!("poseidon2 2^{} instances", LOG_N_ROWS + 3), |b| {
-        b.iter(|| -> StarkProof<_, Blake2sHash, _> {
+        b.iter(|| -> StarkProof<_, Blake2sHash> {
             let component = PoseidonComponent {
                 log_n_rows: LOG_N_ROWS,
             };

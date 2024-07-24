@@ -18,17 +18,16 @@ use crate::core::vcs::hasher::Hash;
 use crate::core::vcs::ops::{MerkleHasher, MerkleOps};
 use crate::core::{ColumnVec, InteractionElements};
 
-pub fn commit_and_prove<B, MH, C, H, N>(
+pub fn commit_and_prove<B, MH, C, H>(
     air: &impl AirTraceGenerator<B>,
     channel: &mut C,
     trace: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-) -> Result<StarkProof<MH, H, N>, ProvingError>
+) -> Result<StarkProof<MH, H>, ProvingError>
 where
     B: Backend + MerkleOps<MH>,
     C: ChannelTrait<Digest = H>,
     MH: MerkleHasher<Hash = H>,
-    H: Hash<N>,
-    N: Sized + Eq,
+    H: Hash,
 {
     // Check that traces are not too big.
     for (i, trace) in trace.iter().enumerate() {
@@ -108,16 +107,15 @@ where
     Ok((commitment_scheme, interaction_elements))
 }
 
-pub fn commit_and_verify<MH, C, H, N>(
-    proof: StarkProof<MH, H, N>,
+pub fn commit_and_verify<MH, C, H>(
+    proof: StarkProof<MH, H>,
     air: &(impl Air + AirTraceVerifier),
     channel: &mut C,
 ) -> Result<(), VerificationError>
 where
     C: ChannelTrait<Digest = H>,
     MH: MerkleHasher<Hash = H>,
-    H: Hash<N> + Serialize,
-    N: Sized + Eq,
+    H: Hash + Serialize,
 {
     // Read trace commitment.
     let mut commitment_scheme = CommitmentSchemeVerifier::new();
@@ -328,7 +326,7 @@ mod tests {
         let values = vec![BaseField::zero(); 1 << LOG_DOMAIN_SIZE];
         let trace = vec![CpuCircleEvaluation::new(domain, values)];
 
-        let proof_error = commit_and_prove::<_, Blake2sMerkleHasher, _, Blake2sHash, _>(
+        let proof_error = commit_and_prove::<_, Blake2sMerkleHasher, _, Blake2sHash>(
             &air,
             &mut test_channel(),
             trace,
@@ -360,7 +358,7 @@ mod tests {
         let values = vec![BaseField::zero(); 1 << LOG_DOMAIN_SIZE];
         let trace = vec![CpuCircleEvaluation::new(domain, values)];
 
-        let proof_error = commit_and_prove::<_, Blake2sMerkleHasher, _, Blake2sHash, _>(
+        let proof_error = commit_and_prove::<_, Blake2sMerkleHasher, _, Blake2sHash>(
             &air,
             &mut test_channel(),
             trace,
@@ -387,7 +385,7 @@ mod tests {
         let values = vec![BaseField::zero(); 1 << LOG_DOMAIN_SIZE];
         let trace = vec![CpuCircleEvaluation::new(domain, values)];
 
-        let proof = commit_and_prove::<_, Blake2sMerkleHasher, _, Blake2sHash, _>(
+        let proof = commit_and_prove::<_, Blake2sMerkleHasher, _, Blake2sHash>(
             &air,
             &mut test_channel(),
             trace,
