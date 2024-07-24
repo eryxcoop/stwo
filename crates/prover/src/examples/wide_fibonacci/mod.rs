@@ -25,9 +25,8 @@ mod tests {
     use crate::core::utils::{
         bit_reverse, circle_domain_order_to_coset_order, shifted_secure_combination,
     };
-    use crate::core::vcs::blake2_hash::Blake2sHasher;
+    use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
     use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-    use crate::core::vcs::hasher::Hasher;
     use crate::core::InteractionElements;
     use crate::examples::wide_fibonacci::trace_gen::write_lookup_column;
     use crate::trace_generation::{commit_and_prove, commit_and_verify, ComponentTraceGenerator};
@@ -235,7 +234,7 @@ mod tests {
         let air = WideFibAir { component };
         let prover_channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[])));
-        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHasher> =
+        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHash, _> =
             commit_and_prove(&air, prover_channel, trace).unwrap();
 
         let verifier_channel =

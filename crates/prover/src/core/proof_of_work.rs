@@ -1,9 +1,9 @@
 use thiserror::Error;
 use tracing::{span, Level};
 
+use super::vcs::blake2_hash::Blake2sHasher;
 use crate::core::channel::{Channel, Serialize};
-use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
-use crate::core::vcs::hasher::Hasher;
+use crate::core::vcs::blake2_hash::Blake2sHash;
 
 // TODO(ShaharS): generalize to more channels and create a from function in the hash traits.
 pub struct ProofOfWork {

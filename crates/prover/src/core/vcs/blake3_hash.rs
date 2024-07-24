@@ -62,41 +62,53 @@ pub struct Blake3Hasher {
     state: blake3::Hasher,
 }
 
-impl super::hasher::Hasher for Blake3Hasher {
-    type Hash = Blake3Hash;
-    const BLOCK_SIZE: usize = 64;
-    const OUTPUT_SIZE: usize = 32;
-    type NativeType = u8;
+impl Blake3Hasher {
+    // const BLOCK_SIZE: usize = 64;
+    // const OUTPUT_SIZE: usize = 32;
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             state: blake3::Hasher::new(),
         }
     }
 
+    #[allow(unused)]
     fn reset(&mut self) {
         self.state.reset();
     }
 
-    fn update(&mut self, data: &[u8]) {
+    pub fn update(&mut self, data: &[u8]) {
         self.state.update(data);
     }
 
-    fn finalize(self) -> Blake3Hash {
+    pub fn finalize(self) -> Blake3Hash {
         Blake3Hash(self.state.finalize().into())
     }
 
+    #[allow(unused)]
     fn finalize_reset(&mut self) -> Blake3Hash {
         let res = Blake3Hash(self.state.finalize().into());
         self.state.reset();
         res
+    }
+
+    pub fn concat_and_hash(v1: &Blake3Hash, v2: &Blake3Hash) -> Blake3Hash {
+        let mut hasher = Self::new();
+        hasher.update(v1.as_ref());
+        hasher.update(v2.as_ref());
+        hasher.finalize()
+    }
+
+    pub fn hash(data: &[u8]) -> Blake3Hash {
+        let mut hasher = Self::new();
+        hasher.update(data);
+        hasher.finalize()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::core::vcs::blake3_hash::Blake3Hasher;
-    use crate::core::vcs::hasher::Hasher;
 
     #[test]
     fn single_hash_test() {

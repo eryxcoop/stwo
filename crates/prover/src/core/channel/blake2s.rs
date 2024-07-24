@@ -6,7 +6,6 @@ use crate::core::fields::qm31::SecureField;
 use crate::core::fields::secure_column::SECURE_EXTENSION_DEGREE;
 use crate::core::fields::IntoSlice;
 use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
-use crate::core::vcs::hasher::Hasher;
 
 pub const BLAKE_BYTES_PER_HASH: usize = 32;
 pub const FELTS_PER_HASH: usize = 8;

@@ -1,5 +1,4 @@
 use std::iter::zip;
-use std::marker::PhantomData;
 
 use num_traits::One;
 
@@ -15,27 +14,20 @@ use crate::core::poly::BitReversedOrder;
 use crate::core::prover::{ProvingError, StarkProof, VerificationError};
 use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
 use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-use crate::core::vcs::hasher::Hasher;
 use crate::trace_generation::{commit_and_prove, commit_and_verify};
-
 pub mod air;
 mod component;
 
 #[derive(Clone)]
-pub struct Fibonacci<CH: Hasher> {
+pub struct Fibonacci {
     pub air: FibonacciAir,
-    _marker_channel_hasher: PhantomData<CH>,
 }
 
-impl<CH> Fibonacci<CH>
-where
-    CH: Hasher<Hash = Blake2sHash>,
-{
+impl Fibonacci {
     pub fn new(log_size: u32, claim: BaseField) -> Self {
         let component = FibonacciComponent::new(log_size, claim);
         Self {
             air: FibonacciAir::new(component),
-            _marker_channel_hasher: PhantomData,
         }
     }
 
@@ -58,7 +50,7 @@ where
         CircleEvaluation::new_canonical_ordered(trace_domain, trace)
     }
 
-    pub fn prove(&self) -> Result<StarkProof<Blake2sMerkleHasher, CH>, ProvingError> {
+    pub fn prove(&self) -> Result<StarkProof<Blake2sMerkleHasher, Blake2sHash, u8>, ProvingError> {
         let trace = self.get_trace();
         let channel = &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[self
             .air
@@ -69,7 +61,7 @@ where
 
     pub fn verify(
         &self,
-        proof: StarkProof<Blake2sMerkleHasher, CH>,
+        proof: StarkProof<Blake2sMerkleHasher, Blake2sHash, u8>,
     ) -> Result<(), VerificationError> {
         let channel = &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[self
             .air
@@ -79,17 +71,13 @@ where
     }
 }
 
-pub struct MultiFibonacci<CH: Hasher> {
+pub struct MultiFibonacci {
     pub air: MultiFibonacciAir,
     log_sizes: Vec<u32>,
     claims: Vec<BaseField>,
-    _marker_channel_hasher: PhantomData<CH>,
 }
 
-impl<CH> MultiFibonacci<CH>
-where
-    CH: Hasher<Hash = Blake2sHash>,
-{
+impl MultiFibonacci {
     pub fn new(log_sizes: Vec<u32>, claims: Vec<BaseField>) -> Self {
         assert!(!log_sizes.is_empty());
         assert_eq!(log_sizes.len(), claims.len());
@@ -98,20 +86,19 @@ where
             air,
             log_sizes,
             claims,
-            _marker_channel_hasher: PhantomData,
         }
     }
 
     pub fn get_trace(&self) -> Vec<CircleEvaluation<CpuBackend, BaseField, BitReversedOrder>> {
         zip(&self.log_sizes, &self.claims)
             .map(|(log_size, claim)| {
-                let fib: Fibonacci<CH> = Fibonacci::new(*log_size, *claim);
+                let fib: Fibonacci = Fibonacci::new(*log_size, *claim);
                 fib.get_trace()
             })
             .collect()
     }
 
-    pub fn prove(&self) -> Result<StarkProof<Blake2sMerkleHasher, CH>, ProvingError> {
+    pub fn prove(&self) -> Result<StarkProof<Blake2sMerkleHasher, Blake2sHash, u8>, ProvingError> {
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&self.claims)));
         let trace = self.get_trace();
@@ -120,7 +107,7 @@ where
 
     pub fn verify(
         &self,
-        proof: StarkProof<Blake2sMerkleHasher, CH>,
+        proof: StarkProof<Blake2sMerkleHasher, Blake2sHash, u8>,
     ) -> Result<(), VerificationError> {
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&self.claims)));
@@ -151,9 +138,8 @@ mod tests {
     use crate::core::prover::{StarkProof, VerificationError};
     use crate::core::queries::Queries;
     use crate::core::utils::bit_reverse;
-    use crate::core::vcs::blake2_hash::Blake2sHasher;
+    use crate::core::vcs::blake2_hash::{Blake2sHash, Blake2sHasher};
     use crate::core::vcs::blake2_merkle::Blake2sMerkleHasher;
-    use crate::core::vcs::hasher::Hasher;
     use crate::core::{InteractionElements, LookupValues};
     use crate::examples::fibonacci::air::FibonacciAirGenerator;
     use crate::examples::fibonacci::component::FibonacciInput;
@@ -174,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_composition_polynomial_is_low_degree() {
-        let fib = Fibonacci::<Blake2sHasher>::new(5, m31!(443693538));
+        let fib = Fibonacci::new(5, m31!(443693538));
         let trace = fib.get_trace();
         let trace_poly = trace.interpolate();
         let trace_eval =
@@ -257,7 +243,7 @@ mod tests {
     #[test]
     fn test_fib_prove() {
         const FIB_LOG_SIZE: u32 = 5;
-        let fib = Fibonacci::<Blake2sHasher>::new(FIB_LOG_SIZE, m31!(443693538));
+        let fib = Fibonacci::new(FIB_LOG_SIZE, m31!(443693538));
 
         let proof = fib.prove().unwrap();
         fib.verify(proof).unwrap();
@@ -275,19 +261,19 @@ mod tests {
         let trace = fib_trace_generator.write_trace();
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[CLAIM])));
-        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHasher> =
+        let proof: StarkProof<Blake2sMerkleHasher, Blake2sHash, _> =
             commit_and_prove(&fib_trace_generator, channel, trace).unwrap();
 
         let channel =
             &mut Blake2sChannel::new(Blake2sHasher::hash(BaseField::into_slice(&[CLAIM])));
-        let fib_air = Fibonacci::<Blake2sHasher>::new(FIB_LOG_SIZE, CLAIM).air;
+        let fib_air = Fibonacci::new(FIB_LOG_SIZE, CLAIM).air;
         commit_and_verify(proof, &fib_air, channel).unwrap();
     }
 
     #[test]
     fn test_prove_invalid_trace_value() {
         const FIB_LOG_SIZE: u32 = 5;
-        let fib = Fibonacci::<Blake2sHasher>::new(FIB_LOG_SIZE, m31!(443693538));
+        let fib = Fibonacci::new(FIB_LOG_SIZE, m31!(443693538));
 
         let mut invalid_proof = fib.prove().unwrap();
         invalid_proof.commitment_scheme_proof.queried_values.0[BASE_TRACE][0][3] +=
@@ -300,7 +286,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_trace_oods_values() {
         const FIB_LOG_SIZE: u32 = 5;
-        let fib = Fibonacci::<Blake2sHasher>::new(FIB_LOG_SIZE, m31!(443693538));
+        let fib = Fibonacci::new(FIB_LOG_SIZE, m31!(443693538));
 
         let mut invalid_proof = fib.prove().unwrap();
         invalid_proof
@@ -318,7 +304,7 @@ mod tests {
     #[test]
     fn test_prove_insufficient_trace_values() {
         const FIB_LOG_SIZE: u32 = 5;
-        let fib = Fibonacci::<Blake2sHasher>::new(FIB_LOG_SIZE, m31!(443693538));
+        let fib = Fibonacci::new(FIB_LOG_SIZE, m31!(443693538));
 
         let mut invalid_proof = fib.prove().unwrap();
         invalid_proof.commitment_scheme_proof.queried_values.0[BASE_TRACE][0].pop();
@@ -329,15 +315,14 @@ mod tests {
 
     #[test]
     fn test_rectangular_multi_fibonacci() {
-        let multi_fib =
-            MultiFibonacci::<Blake2sHasher>::new(vec![5; 16], vec![m31!(443693538); 16]);
+        let multi_fib = MultiFibonacci::new(vec![5; 16], vec![m31!(443693538); 16]);
         let proof = multi_fib.prove().unwrap();
         multi_fib.verify(proof).unwrap();
     }
 
     #[test]
     fn test_mixed_degree_multi_fibonacci() {
-        let multi_fib = MultiFibonacci::<Blake2sHasher>::new(
+        let multi_fib = MultiFibonacci::new(
             // TODO(spapini): Change order of log_sizes.
             vec![3, 5, 7],
             vec![m31!(1056169651), m31!(443693538), m31!(722122436)],

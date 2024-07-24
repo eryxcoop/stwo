@@ -70,44 +70,54 @@ pub struct Blake2sHasher {
     state: Blake2s256,
 }
 
-impl super::hasher::Hasher for Blake2sHasher {
-    type Hash = Blake2sHash;
-    const BLOCK_SIZE: usize = 64;
-    const OUTPUT_SIZE: usize = 32;
-    type NativeType = u8;
+impl Blake2sHasher {
+    // const BLOCK_SIZE: usize = 64;
+    // const OUTPUT_SIZE: usize = 32;
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             state: Blake2s256::new(),
         }
     }
 
-    fn reset(&mut self) {
+    fn _reset(&mut self) {
         blake2::Digest::reset(&mut self.state);
     }
 
-    fn update(&mut self, data: &[u8]) {
+    pub fn update(&mut self, data: &[u8]) {
         blake2::Digest::update(&mut self.state, data);
     }
 
-    fn finalize(self) -> Blake2sHash {
+    pub fn finalize(self) -> Blake2sHash {
         Blake2sHash(self.state.finalize().into())
     }
 
+    #[allow(unused)]
     fn finalize_reset(&mut self) -> Blake2sHash {
         Blake2sHash(self.state.finalize_reset().into())
+    }
+
+    pub fn concat_and_hash(v1: &Blake2sHash, v2: &Blake2sHash) -> Blake2sHash {
+        let mut hasher = Self::new();
+        hasher.update(v1.as_ref());
+        hasher.update(v2.as_ref());
+        hasher.finalize()
+    }
+
+    pub fn hash(data: &[u8]) -> Blake2sHash {
+        let mut hasher = Self::new();
+        hasher.update(data);
+        hasher.finalize()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Blake2sHasher;
-    use crate::core::vcs::blake2_hash;
-    use crate::core::vcs::hasher::Hasher;
 
     #[test]
     fn single_hash_test() {
-        let hash_a = blake2_hash::Blake2sHasher::hash(b"a");
+        let hash_a = Blake2sHasher::hash(b"a");
         assert_eq!(
             hash_a.to_string(),
             "4a0d129873403037c2cd9b9048203687f6233fb6738956e0349bd4320fec3e90"

@@ -55,18 +55,6 @@ pub trait Hasher: Sized + Default {
 }
 
 pub trait Hash<NativeType: Sized + Eq>:
-    Copy
-    + Default
-    + Display
-    + Debug
-    + Eq
-    + self::Name
-    + Into<Vec<NativeType>>
-    + TryFrom<Vec<NativeType>>
-    + AsRef<[NativeType]>
-    + for<'a> From<&'a [NativeType]>
-    + Send
-    + Sync
-    + 'static
+    Copy + Default + Display + Debug + Eq + self::Name + AsRef<[NativeType]> + Send + Sync + 'static
 {
 }
