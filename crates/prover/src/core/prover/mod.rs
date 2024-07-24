@@ -119,7 +119,6 @@ pub fn verify<MH, C>(
 where
     MH: MerkleHasher,
     C: ChannelTrait<Digest = MH::Hash>,
-    MH::Hash: Hash
 {
     let random_coeff = channel.draw_felt();
 
