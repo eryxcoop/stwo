@@ -4,7 +4,6 @@ use tracing::{span, Level};
 
 use super::air::AirProver;
 use super::backend::Backend;
-use super::channel::Serialize;
 use super::fields::secure_column::SECURE_EXTENSION_DEGREE;
 use super::fri::FriVerificationError;
 use super::pcs::{CommitmentSchemeProof, TreeVec};
@@ -110,17 +109,17 @@ where
     })
 }
 
-pub fn verify<MH, C, H>(
+pub fn verify<MH, C>(
     air: &impl Air,
     channel: &mut C,
     interaction_elements: &InteractionElements,
     commitment_scheme: &mut CommitmentSchemeVerifier<MH>,
-    proof: StarkProof<MH, H>,
+    proof: StarkProof<MH, MH::Hash>,
 ) -> Result<(), VerificationError>
 where
-    MH: MerkleHasher<Hash = H>,
-    C: ChannelTrait<Digest = H>,
-    H: Serialize + Hash,
+    MH: MerkleHasher,
+    C: ChannelTrait<Digest = MH::Hash>,
+    MH::Hash: Hash
 {
     let random_coeff = channel.draw_felt();
 

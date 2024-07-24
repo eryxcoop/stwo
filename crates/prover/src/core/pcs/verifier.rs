@@ -12,7 +12,7 @@ use super::super::prover::{
 use super::quotients::{fri_answers, PointSample};
 use super::utils::TreeVec;
 use super::CommitmentSchemeProof;
-use crate::core::channel::{Channel as ChannelTrait, Serialize};
+use crate::core::channel::{Channel as ChannelTrait};
 use crate::core::prover::VerificationError;
 use crate::core::vcs::ops::MerkleHasher;
 use crate::core::vcs::verifier::MerkleVerifier;
@@ -37,11 +37,10 @@ impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
     }
 
     /// Reads a commitment from the prover.
-    pub fn commit<C, D>(&mut self, commitment: C::Digest, log_sizes: &[u32], channel: &mut C)
+    pub fn commit<C>(&mut self, commitment: C::Digest, log_sizes: &[u32], channel: &mut C)
     where
-        C: ChannelTrait<Digest = D>,
-        MH: MerkleHasher<Hash = D>,
-        D: Serialize + Copy + Clone + Eq + std::fmt::Debug,
+        C: ChannelTrait,
+        MH: MerkleHasher<Hash = C::Digest>
     {
         channel.mix_digest(commitment);
         let extended_log_sizes = log_sizes
@@ -52,16 +51,15 @@ impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
         self.trees.push(verifier);
     }
 
-    pub fn verify_values<C, D>(
+    pub fn verify_values<C>(
         &self,
         sampled_points: TreeVec<ColumnVec<Vec<CirclePoint<SecureField>>>>,
         proof: CommitmentSchemeProof<MH>,
         channel: &mut C,
     ) -> Result<(), VerificationError>
     where
-        C: ChannelTrait<Digest = D>,
-        MH: MerkleHasher<Hash = D>,
-        D: Serialize + Copy + Clone + Eq + std::fmt::Debug,
+        C: ChannelTrait,
+        MH: MerkleHasher<Hash = C::Digest>
     {
         channel.mix_felts(&proof.sampled_values.clone().flatten_cols());
         let random_coeff = channel.draw_felt();
