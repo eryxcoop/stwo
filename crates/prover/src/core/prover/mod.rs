@@ -20,7 +20,6 @@ use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;
-use crate::core::vcs::hasher::Hash;
 use crate::core::vcs::ops::MerkleOps;
 use crate::core::vcs::verifier::MerkleVerificationError;
 
@@ -30,10 +29,10 @@ pub const PROOF_OF_WORK_BITS: u32 = 12;
 pub const N_QUERIES: usize = 3;
 
 #[derive(Debug)]
-pub struct StarkProof<MH: MerkleHasher> {
-    pub commitments: TreeVec<MH::Hash>,
+pub struct StarkProof<M: MerkleHasher> {
+    pub commitments: TreeVec<M::Hash>,
     pub lookup_values: LookupValues,
-    pub commitment_scheme_proof: CommitmentSchemeProof<MH>,
+    pub commitment_scheme_proof: CommitmentSchemeProof<M>,
 }
 
 #[derive(Debug)]
@@ -44,17 +43,17 @@ pub struct AdditionalProofData {
     pub oods_quotients: Vec<CircleEvaluation<CpuBackend, SecureField, BitReversedOrder>>,
 }
 
-pub fn prove<B: Backend + MerkleOps<MH>, MH, C, H>(
+pub fn prove<B, C, M>(
     air: &impl AirProver<B>,
     channel: &mut C,
     interaction_elements: &InteractionElements,
     twiddles: &TwiddleTree<B>,
-    commitment_scheme: &mut CommitmentSchemeProver<B, MH>,
-) -> Result<StarkProof<MH>, ProvingError>
+    commitment_scheme: &mut CommitmentSchemeProver<B, M>,
+) -> Result<StarkProof<M>, ProvingError>
 where
-    C: ChannelTrait<Digest = H>,
-    H: Hash,
-    MH: MerkleHasher<Hash = H>,
+    B: Backend + MerkleOps<M>,
+    C: ChannelTrait,
+    M: MerkleHasher<Hash = C::Digest>,
 {
     let component_traces = air.component_traces(&commitment_scheme.trees);
     let lookup_values = air.lookup_values(&component_traces);
@@ -109,16 +108,16 @@ where
     })
 }
 
-pub fn verify<MH, C>(
+pub fn verify<C, M>(
     air: &impl Air,
     channel: &mut C,
     interaction_elements: &InteractionElements,
-    commitment_scheme: &mut CommitmentSchemeVerifier<MH>,
-    proof: StarkProof<MH>,
+    commitment_scheme: &mut CommitmentSchemeVerifier<M>,
+    proof: StarkProof<M>,
 ) -> Result<(), VerificationError>
 where
-    MH: MerkleHasher,
-    C: ChannelTrait<Digest = MH::Hash>,
+    C: ChannelTrait,
+    M: MerkleHasher<Hash = C::Digest>,
 {
     let random_coeff = channel.draw_felt();
 
