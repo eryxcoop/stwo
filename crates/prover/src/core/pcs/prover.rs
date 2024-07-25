@@ -112,7 +112,7 @@ impl<B: Backend + MerkleOps<H>, H: MerkleHasher> CommitmentSchemeProver<B, H> {
 
         // Run FRI commitment phase on the oods quotients.
         let fri_config = FriConfig::new(LOG_LAST_LAYER_DEGREE_BOUND, LOG_BLOWUP_FACTOR, N_QUERIES);
-        let fri_prover = FriProver::<B, H>::commit(channel, fri_config, &quotients, twiddles);
+        let fri_prover = FriProver::commit(channel, fri_config, &quotients, twiddles);
 
         // Proof of work.
         let proof_of_work = ProofOfWork::new(PROOF_OF_WORK_BITS).prove(channel);
