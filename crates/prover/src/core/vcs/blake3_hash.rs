@@ -90,19 +90,6 @@ impl BlakeHasher for Blake3Hasher {
         self.state.reset();
         res
     }
-
-    fn concat_and_hash(v1: &Blake3Hash, v2: &Blake3Hash) -> Blake3Hash {
-        let mut hasher = Self::new();
-        hasher.update(v1.as_ref());
-        hasher.update(v2.as_ref());
-        hasher.finalize()
-    }
-
-    fn hash(data: &[u8]) -> Blake3Hash {
-        let mut hasher = Self::new();
-        hasher.update(data);
-        hasher.finalize()
-    }
 }
 
 #[cfg(test)]
