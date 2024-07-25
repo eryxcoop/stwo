@@ -247,10 +247,6 @@ mod tests {
 
     #[test_log::test]
     fn test_single_instance_wide_fib_prove_with_poseidon() {
-        // Note: To see time measurement, run test with
-        //   RUST_LOG_SPAN_EVENTS=enter,close RUST_LOG=info RUST_BACKTRACE=1 cargo test
-        //   test_prove -- --nocapture
-
         const LOG_N_INSTANCES: u32 = 0;
         let component = WideFibComponent {
             log_fibonacci_size: 3 + LOG_N_COLUMNS as u32,

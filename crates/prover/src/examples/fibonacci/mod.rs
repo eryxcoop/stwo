@@ -5,7 +5,6 @@ use num_traits::One;
 use self::air::{FibonacciAir, MultiFibonacciAir};
 use self::component::FibonacciComponent;
 use crate::core::backend::cpu::CpuCircleEvaluation;
-use crate::core::backend::CpuBackend;
 use crate::core::channel::{Blake2sChannel, Channel};
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::{FieldExpOps, IntoSlice};
@@ -87,10 +86,10 @@ impl MultiFibonacci {
         }
     }
 
-    pub fn get_trace(&self) -> Vec<CircleEvaluation<CpuBackend, BaseField, BitReversedOrder>> {
+    pub fn get_trace(&self) -> Vec<CpuCircleEvaluation<BaseField, BitReversedOrder>> {
         zip(&self.log_sizes, &self.claims)
             .map(|(log_size, claim)| {
-                let fib: Fibonacci = Fibonacci::new(*log_size, *claim);
+                let fib = Fibonacci::new(*log_size, *claim);
                 fib.get_trace()
             })
             .collect()
