@@ -29,10 +29,10 @@ pub const PROOF_OF_WORK_BITS: u32 = 12;
 pub const N_QUERIES: usize = 3;
 
 #[derive(Debug)]
-pub struct StarkProof<M: MerkleHasher> {
-    pub commitments: TreeVec<M::Hash>,
+pub struct StarkProof<H: MerkleHasher> {
+    pub commitments: TreeVec<H::Hash>,
     pub lookup_values: LookupValues,
-    pub commitment_scheme_proof: CommitmentSchemeProof<M>,
+    pub commitment_scheme_proof: CommitmentSchemeProof<H>,
 }
 
 #[derive(Debug)]
@@ -43,17 +43,17 @@ pub struct AdditionalProofData {
     pub oods_quotients: Vec<CircleEvaluation<CpuBackend, SecureField, BitReversedOrder>>,
 }
 
-pub fn prove<B, C, M>(
+pub fn prove<B, C, H>(
     air: &impl AirProver<B>,
     channel: &mut C,
     interaction_elements: &InteractionElements,
     twiddles: &TwiddleTree<B>,
-    commitment_scheme: &mut CommitmentSchemeProver<B, M>,
-) -> Result<StarkProof<M>, ProvingError>
+    commitment_scheme: &mut CommitmentSchemeProver<B, H>,
+) -> Result<StarkProof<H>, ProvingError>
 where
-    B: Backend + MerkleOps<M>,
+    B: Backend + MerkleOps<H>,
     C: ChannelTrait,
-    M: MerkleHasher<Hash = C::Digest>,
+    H: MerkleHasher<Hash = C::Digest>,
 {
     let component_traces = air.component_traces(&commitment_scheme.trees);
     let lookup_values = air.lookup_values(&component_traces);
@@ -108,16 +108,16 @@ where
     })
 }
 
-pub fn verify<C, M>(
+pub fn verify<C, H>(
     air: &impl Air,
     channel: &mut C,
     interaction_elements: &InteractionElements,
-    commitment_scheme: &mut CommitmentSchemeVerifier<M>,
-    proof: StarkProof<M>,
+    commitment_scheme: &mut CommitmentSchemeVerifier<H>,
+    proof: StarkProof<H>,
 ) -> Result<(), VerificationError>
 where
     C: ChannelTrait,
-    M: MerkleHasher<Hash = C::Digest>,
+    H: MerkleHasher<Hash = C::Digest>,
 {
     let random_coeff = channel.draw_felt();
 

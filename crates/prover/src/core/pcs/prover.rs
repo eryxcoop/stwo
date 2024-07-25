@@ -143,12 +143,12 @@ impl<B: Backend + MerkleOps<H>, H: MerkleHasher> CommitmentSchemeProver<B, H> {
 }
 
 #[derive(Debug)]
-pub struct CommitmentSchemeProof<MH: MerkleHasher> {
+pub struct CommitmentSchemeProof<H: MerkleHasher> {
     pub sampled_values: TreeVec<ColumnVec<Vec<SecureField>>>,
-    pub decommitments: TreeVec<MerkleDecommitment<MH>>,
+    pub decommitments: TreeVec<MerkleDecommitment<H>>,
     pub queried_values: TreeVec<ColumnVec<Vec<BaseField>>>,
     pub proof_of_work: ProofOfWorkProof,
-    pub fri_proof: FriProof<MH>,
+    pub fri_proof: FriProof<H>,
 }
 
 /// Prover data for a single commitment tree in a commitment scheme. The commitment scheme allows to

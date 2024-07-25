@@ -20,11 +20,11 @@ use crate::core::ColumnVec;
 
 /// The verifier side of a FRI polynomial commitment scheme. See [super].
 #[derive(Default)]
-pub struct CommitmentSchemeVerifier<MH: MerkleHasher> {
-    pub trees: TreeVec<MerkleVerifier<MH>>,
+pub struct CommitmentSchemeVerifier<H: MerkleHasher> {
+    pub trees: TreeVec<MerkleVerifier<H>>,
 }
 
-impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
+impl<H: MerkleHasher> CommitmentSchemeVerifier<H> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -40,7 +40,7 @@ impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
     pub fn commit<C>(&mut self, commitment: C::Digest, log_sizes: &[u32], channel: &mut C)
     where
         C: ChannelTrait,
-        MH: MerkleHasher<Hash = C::Digest>,
+        H: MerkleHasher<Hash = C::Digest>,
     {
         channel.mix_digest(commitment);
         let extended_log_sizes = log_sizes
@@ -54,12 +54,12 @@ impl<MH: MerkleHasher> CommitmentSchemeVerifier<MH> {
     pub fn verify_values<C>(
         &self,
         sampled_points: TreeVec<ColumnVec<Vec<CirclePoint<SecureField>>>>,
-        proof: CommitmentSchemeProof<MH>,
+        proof: CommitmentSchemeProof<H>,
         channel: &mut C,
     ) -> Result<(), VerificationError>
     where
         C: ChannelTrait,
-        MH: MerkleHasher<Hash = C::Digest>,
+        H: MerkleHasher<Hash = C::Digest>,
     {
         channel.mix_felts(&proof.sampled_values.clone().flatten_cols());
         let random_coeff = channel.draw_felt();

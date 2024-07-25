@@ -78,9 +78,9 @@ pub trait AirExt: Air {
         air_sizes
     }
 
-    fn component_traces<'a, B: Backend + MerkleOps<M>, M: MerkleHasher>(
+    fn component_traces<'a, B: Backend + MerkleOps<H>, H: MerkleHasher>(
         &'a self,
-        trees: &'a [CommitmentTreeProver<B, M>],
+        trees: &'a [CommitmentTreeProver<B, H>],
     ) -> Vec<ComponentTrace<'_, B>> {
         let mut poly_iters = trees
             .iter()

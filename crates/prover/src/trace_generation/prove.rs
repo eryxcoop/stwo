@@ -17,15 +17,15 @@ use crate::core::prover::{
 use crate::core::vcs::ops::{MerkleHasher, MerkleOps};
 use crate::core::{ColumnVec, InteractionElements};
 
-pub fn commit_and_prove<B, M, C>(
+pub fn commit_and_prove<B, H, C>(
     air: &impl AirTraceGenerator<B>,
     channel: &mut C,
     trace: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-) -> Result<StarkProof<M>, ProvingError>
+) -> Result<StarkProof<H>, ProvingError>
 where
-    B: Backend + MerkleOps<M>,
+    B: Backend + MerkleOps<H>,
     C: ChannelTrait,
-    M: MerkleHasher<Hash = C::Digest>,
+    H: MerkleHasher<Hash = C::Digest>,
 {
     // Check that traces are not too big.
     for (i, trace) in trace.iter().enumerate() {
@@ -76,16 +76,16 @@ where
     )
 }
 
-pub fn evaluate_and_commit_on_trace<B, M, C>(
+pub fn evaluate_and_commit_on_trace<B, H, C>(
     air: &impl AirTraceGenerator<B>,
     channel: &mut C,
     twiddles: &TwiddleTree<B>,
     trace: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-) -> Result<(CommitmentSchemeProver<B, M>, InteractionElements), ProvingError>
+) -> Result<(CommitmentSchemeProver<B, H>, InteractionElements), ProvingError>
 where
-    B: Backend + MerkleOps<M>,
+    B: Backend + MerkleOps<H>,
     C: ChannelTrait,
-    M: MerkleHasher<Hash = C::Digest>,
+    H: MerkleHasher<Hash = C::Digest>,
 {
     let mut commitment_scheme = CommitmentSchemeProver::new(LOG_BLOWUP_FACTOR);
     // TODO(spapini): Remove clone.
@@ -105,14 +105,14 @@ where
     Ok((commitment_scheme, interaction_elements))
 }
 
-pub fn commit_and_verify<M, C>(
-    proof: StarkProof<M>,
+pub fn commit_and_verify<H, C>(
+    proof: StarkProof<H>,
     air: &(impl Air + AirTraceVerifier),
     channel: &mut C,
 ) -> Result<(), VerificationError>
 where
     C: ChannelTrait,
-    M: MerkleHasher<Hash = C::Digest>,
+    H: MerkleHasher<Hash = C::Digest>,
 {
     // Read trace commitment.
     let mut commitment_scheme = CommitmentSchemeVerifier::new();
