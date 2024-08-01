@@ -47,14 +47,21 @@ pub fn accumulate_row_quotients(
     domain_point: CirclePoint<BaseField>,
 ) -> SecureField {
     let mut row_accumulator = SecureField::zero();
-    for (sample_batch, line_coeffs, batch_coeff, denominator_inverses) in izip!(
+    let denominator_inverses = denominator_inverse(sample_batches, domain_point);
+
+    for (sample_batch,
+        line_coeffs,
+        batch_coeff,
+        denominator_inverse) in izip!(
         sample_batches,
         &quotient_constants.line_coeffs,
         &quotient_constants.batch_random_coeffs,
-        &quotient_constants.denominator_inverses
+        denominator_inverses
     ) {
         let mut numerator = SecureField::zero();
-        for ((column_index, _), (a, b, c)) in zip_eq(&sample_batch.columns_and_values, line_coeffs)
+        for ((column_index, _),
+            (a, b, c))
+        in zip_eq(&sample_batch.columns_and_values, line_coeffs)
         {
             let column = &columns[*column_index];
             let value = column[row] * *c;
@@ -69,7 +76,7 @@ pub fn accumulate_row_quotients(
         }
 
         row_accumulator =
-            row_accumulator * *batch_coeff + numerator.mul_cm31(denominator_inverses[row]);
+            row_accumulator * *batch_coeff + numerator.mul_cm31(denominator_inverse);
     }
     row_accumulator
 }
@@ -130,7 +137,8 @@ fn denominator_inverses(
         let piy = sample_batch.point.y.1;
         for row in 0..domain.size() {
             let domain_point = domain.at(row);
-            flat_denominators.push((prx - domain_point.x) * piy - (pry - domain_point.y) * pix);
+            flat_denominators.push(
+                (prx - domain_point.x) * piy - (pry - domain_point.y) * pix);
         }
     }
 
@@ -144,6 +152,29 @@ fn denominator_inverses(
             denominator_inverses.to_vec()
         })
         .collect()
+}
+
+fn denominator_inverse(
+    sample_batches: &[ColumnSampleBatch],
+    domain_point: CirclePoint<BaseField>,
+) -> Vec<CM31> {
+    let mut flat_denominators = Vec::with_capacity(sample_batches.len());
+    // We want a P to be on a line that passes through a point Pr + uPi in QM31^2, and its conjugate
+    // Pr - uPi. Thus, Pr - P is parallel to Pi. Or, (Pr - P).x * Pi.y - (Pr - P).y * Pi.x = 0.
+    for sample_batch in sample_batches {
+        // Extract Pr, Pi.
+        let prx = sample_batch.point.x.0;
+        let pry = sample_batch.point.y.0;
+        let pix = sample_batch.point.x.1;
+        let piy = sample_batch.point.y.1;
+        flat_denominators.push(
+            (prx - domain_point.x) * piy - (pry - domain_point.y) * pix);
+    }
+
+    let mut flat_denominator_inverses = vec![CM31::zero(); flat_denominators.len()];
+    CM31::batch_inverse(&flat_denominators, &mut flat_denominator_inverses);
+
+    flat_denominator_inverses
 }
 
 pub fn quotient_constants(
