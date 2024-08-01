@@ -141,7 +141,7 @@ pub fn fri_answers_for_log_size(
     let mut evals = Vec::new();
     for subdomain in query_domain.iter() {
         let domain = subdomain.to_circle_domain(&commitment_domain);
-        let quotient_constants = quotient_constants(&sample_batches, random_coeff, domain);
+        let quotient_constants = quotient_constants(&sample_batches, random_coeff);
         let mut column_evals = Vec::new();
         for queried_values in queried_values_per_column.iter_mut() {
             let eval = CircleEvaluation::new(

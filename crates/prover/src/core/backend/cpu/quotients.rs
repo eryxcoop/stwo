@@ -1,18 +1,19 @@
 use itertools::{izip, zip_eq};
 use num_traits::{One, Zero};
 
-use super::CpuBackend;
 use crate::core::circle::CirclePoint;
 use crate::core::constraints::complex_conjugate_line_coeffs;
 use crate::core::fields::cm31::CM31;
+use crate::core::fields::FieldExpOps;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::secure_column::SecureColumnByCoords;
-use crate::core::fields::FieldExpOps;
 use crate::core::pcs::quotients::{ColumnSampleBatch, PointSample, QuotientOps};
-use crate::core::poly::circle::{CircleDomain, CircleEvaluation, SecureEvaluation};
 use crate::core::poly::BitReversedOrder;
-use crate::core::utils::{bit_reverse, bit_reverse_index};
+use crate::core::poly::circle::{CircleDomain, CircleEvaluation, SecureEvaluation};
+use crate::core::utils::bit_reverse_index;
+
+use super::CpuBackend;
 
 impl QuotientOps for CpuBackend {
     fn accumulate_quotients(
@@ -22,7 +23,7 @@ impl QuotientOps for CpuBackend {
         sample_batches: &[ColumnSampleBatch],
     ) -> SecureEvaluation<Self> {
         let mut values = unsafe { SecureColumnByCoords::uninitialized(domain.size()) };
-        let quotient_constants = quotient_constants(sample_batches, random_coeff, domain);
+        let quotient_constants = quotient_constants(sample_batches, random_coeff);
 
         for row in 0..domain.size() {
             let domain_point = domain.at(bit_reverse_index(row, domain.log_size()));
@@ -122,38 +123,6 @@ pub fn batch_random_coeffs(
         .collect()
 }
 
-fn denominator_inverses(
-    sample_batches: &[ColumnSampleBatch],
-    domain: CircleDomain,
-) -> Vec<Vec<CM31>> {
-    let mut flat_denominators = Vec::with_capacity(sample_batches.len() * domain.size());
-    // We want a P to be on a line that passes through a point Pr + uPi in QM31^2, and its conjugate
-    // Pr - uPi. Thus, Pr - P is parallel to Pi. Or, (Pr - P).x * Pi.y - (Pr - P).y * Pi.x = 0.
-    for sample_batch in sample_batches {
-        // Extract Pr, Pi.
-        let prx = sample_batch.point.x.0;
-        let pry = sample_batch.point.y.0;
-        let pix = sample_batch.point.x.1;
-        let piy = sample_batch.point.y.1;
-        for row in 0..domain.size() {
-            let domain_point = domain.at(row);
-            flat_denominators.push(
-                (prx - domain_point.x) * piy - (pry - domain_point.y) * pix);
-        }
-    }
-
-    let mut flat_denominator_inverses = vec![CM31::zero(); flat_denominators.len()];
-    CM31::batch_inverse(&flat_denominators, &mut flat_denominator_inverses);
-
-    flat_denominator_inverses
-        .chunks_mut(domain.size())
-        .map(|denominator_inverses| {
-            bit_reverse(denominator_inverses);
-            denominator_inverses.to_vec()
-        })
-        .collect()
-}
-
 fn denominator_inverse(
     sample_batches: &[ColumnSampleBatch],
     domain_point: CirclePoint<BaseField>,
@@ -180,11 +149,10 @@ fn denominator_inverse(
 pub fn quotient_constants(
     sample_batches: &[ColumnSampleBatch],
     random_coeff: SecureField,
-    domain: CircleDomain,
 ) -> QuotientConstants {
     let line_coeffs = column_line_coeffs(sample_batches, random_coeff);
     let batch_random_coeffs = batch_random_coeffs(sample_batches, random_coeff);
-    let denominator_inverses = denominator_inverses(sample_batches, domain);
+    let denominator_inverses = vec![vec![]];
     QuotientConstants {
         line_coeffs,
         batch_random_coeffs,
@@ -206,12 +174,12 @@ pub struct QuotientConstants {
 
 #[cfg(test)]
 mod tests {
+    use crate::{m31, qm31};
     use crate::core::backend::cpu::{CpuCircleEvaluation, CpuCirclePoly};
     use crate::core::backend::CpuBackend;
     use crate::core::circle::SECURE_FIELD_CIRCLE_GEN;
     use crate::core::pcs::quotients::{ColumnSampleBatch, QuotientOps};
     use crate::core::poly::circle::CanonicCoset;
-    use crate::{m31, qm31};
 
     #[test]
     fn test_quotients_are_low_degree() {
