@@ -152,11 +152,9 @@ pub fn quotient_constants(
 ) -> QuotientConstants {
     let line_coeffs = column_line_coeffs(sample_batches, random_coeff);
     let batch_random_coeffs = batch_random_coeffs(sample_batches, random_coeff);
-    let denominator_inverses = vec![vec![]];
     QuotientConstants {
         line_coeffs,
         batch_random_coeffs,
-        denominator_inverses,
     }
 }
 
@@ -168,8 +166,6 @@ pub struct QuotientConstants {
     /// The random coefficients used to linearly combine the batched quotients For more details see
     /// [self::batch_random_coeffs].
     pub batch_random_coeffs: Vec<SecureField>,
-    /// The inverses of the denominators of the quotients.
-    pub denominator_inverses: Vec<Vec<CM31>>,
 }
 
 #[cfg(test)]
