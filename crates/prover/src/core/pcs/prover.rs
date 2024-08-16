@@ -1,6 +1,10 @@
 use std::collections::BTreeMap;
 
 use itertools::Itertools;
+
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
+
 use serde::{Deserialize, Serialize};
 use tracing::{span, Level};
 
@@ -162,10 +166,19 @@ impl<'a, 'b, B: BackendForChannel<MC>, MC: MerkleChannel> TreeBuilder<'a, 'b, B,
     ) -> TreeColumnSpan {
         let span = span!(Level::INFO, "Interpolation for commitment").entered();
         let col_start = self.polys.len();
+
+        #[cfg(feature = "parallel")]
+        let polys = columns
+            .into_par_iter()
+            .map(|eval| eval.interpolate_with_twiddles(self.commitment_scheme.twiddles))
+            .collect_vec();
+
+        #[cfg(not(feature = "parallel"))]
         let polys = columns
             .into_iter()
             .map(|eval| eval.interpolate_with_twiddles(self.commitment_scheme.twiddles))
             .collect_vec();
+
         span.exit();
         self.polys.extend(polys);
         TreeColumnSpan {
