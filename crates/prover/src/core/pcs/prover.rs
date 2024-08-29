@@ -1,8 +1,6 @@
 use std::collections::BTreeMap;
 
 use itertools::Itertools;
-#[cfg(feature = "parallel")]
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use tracing::{span, Level};
 
@@ -178,17 +176,7 @@ impl<'a, 'b, B: BackendForChannel<MC>, MC: MerkleChannel> TreeBuilder<'a, 'b, B,
         let span = span!(Level::INFO, "Interpolation for commitment").entered();
         let col_start = self.polys.len();
 
-        #[cfg(feature = "parallel")]
-        let polys: Vec<CirclePoly<B>> = columns
-            .into_par_iter()
-            .map(|eval| eval.interpolate_with_twiddles(self.commitment_scheme.twiddles))
-            .collect();
-
-        #[cfg(not(feature = "parallel"))]
-        let polys: Vec<CirclePoly<B>> = columns
-            .into_iter()
-            .map(|eval| eval.interpolate_with_twiddles(self.commitment_scheme.twiddles))
-            .collect();
+        let polys: Vec<CirclePoly<B>> = B::interpolate_columns(&columns, self.commitment_scheme.twiddles);
 
         span.exit();
         self.polys.extend(polys);

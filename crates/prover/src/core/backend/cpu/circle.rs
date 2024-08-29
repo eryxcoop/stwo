@@ -3,6 +3,7 @@ use num_traits::Zero;
 use super::CpuBackend;
 use crate::core::backend::{Col, ColumnOps};
 use crate::core::circle::{CirclePoint, Coset};
+use crate::core::ColumnVec;
 use crate::core::fft::{butterfly, ibutterfly};
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
@@ -82,6 +83,16 @@ impl PolyOps for CpuBackend {
         }
 
         CirclePoly::new(values)
+    }
+
+    fn interpolate_columns(
+        columns: &ColumnVec<CircleEvaluation<Self, BaseField, BitReversedOrder>>,
+        twiddles: &TwiddleTree<Self>,
+    ) -> Vec<CirclePoly<Self>> {
+        columns
+            .into_iter()
+            .map(|eval| Self::interpolate(eval.clone(), twiddles))
+            .collect()
     }
 
     fn eval_at_point(poly: &CirclePoly<Self>, point: CirclePoint<SecureField>) -> SecureField {

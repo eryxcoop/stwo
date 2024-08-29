@@ -1,6 +1,7 @@
 use super::{CanonicCoset, CircleDomain, CircleEvaluation, CirclePoly};
 use crate::core::backend::Col;
 use crate::core::circle::{CirclePoint, Coset};
+use crate::core::ColumnVec;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::FieldOps;
@@ -26,6 +27,11 @@ pub trait PolyOps: FieldOps<BaseField> + Sized {
         eval: CircleEvaluation<Self, BaseField, BitReversedOrder>,
         itwiddles: &TwiddleTree<Self>,
     ) -> CirclePoly<Self>;
+
+    fn interpolate_columns(
+        columns: &ColumnVec<CircleEvaluation<Self, BaseField, BitReversedOrder>>,
+        twiddles: &TwiddleTree<Self>,
+    ) -> Vec<CirclePoly<Self>>;
 
     /// Evaluates the polynomial at a single point.
     /// Used by the [`CirclePoly::eval_at_point()`] function.

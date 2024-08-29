@@ -392,6 +392,8 @@ mod tests {
     use crate::math::matrix::{RowMajorMatrix, SquareMatrix};
     use itertools::Itertools;
     use num_traits::One;
+    use crate::core::backend::CpuBackend;
+    use tracing::{span, Level};
 
     #[cfg(all(target_family = "wasm", not(target_os = "wasi")))]
     #[wasm_bindgen_test::wasm_bindgen_test]
@@ -516,6 +518,7 @@ mod tests {
             fri_config: FriConfig::new(5, 1, 64),
         };
 
+        let simd_span = span!(Level::INFO, "Test SIMD interpolation").entered();
         let simd_columns: ColumnVec<CircleEvaluation<SimdBackend, BaseField, BitReversedOrder>> =
             (0..N_COLUMNS).map( |_index|
                 CircleEvaluation::<SimdBackend, BaseField, BitReversedOrder>::new(
@@ -530,5 +533,23 @@ mod tests {
                 &simd_twiddles
             );
         simd_commitment_scheme_prover.tree_builder().extend_evals(simd_columns);
+        simd_span.exit();
+
+        let cpu_span = span!(Level::INFO, "Test CPU interpolation").entered();
+        let cpu: ColumnVec<CircleEvaluation<CpuBackend, BaseField, BitReversedOrder>> =
+            (0..N_COLUMNS).map( |_index|
+                CircleEvaluation::<CpuBackend, BaseField, BitReversedOrder>::new(
+                    domain,
+                    (0..domain.size()).map(BaseField::from).collect(),
+                )
+            ).collect();
+        let cpu_twiddles = CpuBackend::precompute_twiddles(domain.half_coset);
+        let mut simd_commitment_scheme_prover: CommitmentSchemeProver<'_, CpuBackend, Blake2sMerkleChannel> =
+            CommitmentSchemeProver::new(
+                config,
+                &cpu_twiddles
+            );
+        simd_commitment_scheme_prover.tree_builder().extend_evals(cpu);
+        cpu_span.exit();
     }
 }

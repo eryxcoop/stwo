@@ -1,5 +1,7 @@
 use std::iter::zip;
 use std::mem::transmute;
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
 
 use bytemuck::{cast_slice, Zeroable};
 use num_traits::One;
@@ -11,6 +13,7 @@ use super::SimdBackend;
 use crate::core::backend::simd::column::BaseColumn;
 use crate::core::backend::{Col, CpuBackend};
 use crate::core::circle::{CirclePoint, Coset};
+use crate::core::ColumnVec;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::{Field, FieldExpOps};
@@ -162,6 +165,23 @@ impl PolyOps for SimdBackend {
         values.data.iter_mut().for_each(|x| *x *= inv);
 
         CirclePoly::new(values)
+    }
+
+    fn interpolate_columns(
+        columns: &ColumnVec<CircleEvaluation<Self, BaseField, BitReversedOrder>>,
+        twiddles: &TwiddleTree<Self>,
+    ) -> Vec<CirclePoly<Self>> {
+        #[cfg(feature = "parallel")]
+        return columns
+            .into_par_iter()
+            .map(|eval| Self::interpolate(eval.clone(), twiddles))
+            .collect();
+
+        #[cfg(not(feature = "parallel"))]
+        return columns
+            .into_iter()
+            .map(|eval| Self::interpolate(eval.clone(), twiddles))
+            .collect();
     }
 
     fn eval_at_point(poly: &CirclePoly<Self>, point: CirclePoint<SecureField>) -> SecureField {
