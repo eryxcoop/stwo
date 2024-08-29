@@ -64,7 +64,7 @@ pub struct SecureEvaluation<B: FieldOps<BaseField>, EvalOrder> {
     _eval_order: PhantomData<EvalOrder>,
 }
 
-impl<B: FieldOps<BaseField>, EvalOrder> SecureEvaluation<B, EvalOrder> {
+impl<B: FieldOps<BaseField> + PolyOps, EvalOrder> SecureEvaluation<B, EvalOrder> {
     pub fn new(domain: CircleDomain, values: SecureColumnByCoords<B>) -> Self {
         assert_eq!(domain.size(), values.len());
         Self {
@@ -76,7 +76,10 @@ impl<B: FieldOps<BaseField>, EvalOrder> SecureEvaluation<B, EvalOrder> {
 
     pub fn into_coordinate_evals(
         self,
-    ) -> [CircleEvaluation<B, BaseField, EvalOrder>; SECURE_EXTENSION_DEGREE] {
+    ) -> [CircleEvaluation<B, BaseField, EvalOrder>; SECURE_EXTENSION_DEGREE] where
+        CircleEvaluation<B, BaseField, BitReversedOrder>: Send + Sync,
+        <B as PolyOps>::Twiddles: Send + Sync
+    {
         let Self { domain, values, .. } = self;
         values.columns.map(|c| CircleEvaluation::new(domain, c))
     }

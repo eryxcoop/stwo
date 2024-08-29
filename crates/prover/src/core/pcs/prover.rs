@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 
 use itertools::Itertools;
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use tracing::{span, Level};
 
@@ -15,9 +17,9 @@ use super::quotients::{compute_fri_quotients, PointSample};
 use super::utils::TreeVec;
 use super::{PcsConfig, TreeSubspan};
 use crate::core::air::Trace;
-use crate::core::backend::BackendForChannel;
+use crate::core::backend::{BackendForChannel, ColumnOps};
 use crate::core::channel::{Channel, MerkleChannel};
-use crate::core::poly::circle::{CircleEvaluation, CirclePoly};
+use crate::core::poly::circle::{CircleEvaluation, CirclePoly, PolyOps};
 use crate::core::poly::twiddles::TwiddleTree;
 use crate::core::vcs::ops::MerkleHasher;
 use crate::core::vcs::prover::{MerkleDecommitment, MerkleProver};
@@ -168,13 +170,26 @@ impl<'a, 'b, B: BackendForChannel<MC>, MC: MerkleChannel> TreeBuilder<'a, 'b, B,
     pub fn extend_evals(
         &mut self,
         columns: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-    ) -> TreeSubspan {
+    ) -> TreeSubspan where
+        CircleEvaluation<B, BaseField, BitReversedOrder>: Send + Sync,
+        <B as ColumnOps<BaseField>>::Column: Send + Sync,
+        <B as PolyOps>::Twiddles: Send + Sync
+    {
         let span = span!(Level::INFO, "Interpolation for commitment").entered();
         let col_start = self.polys.len();
-        let polys = columns
+
+        #[cfg(feature = "parallel")]
+        let polys: Vec<CirclePoly<B>> = columns
+            .into_par_iter()
+            .map(|eval| eval.interpolate_with_twiddles(self.commitment_scheme.twiddles))
+            .collect();
+
+        #[cfg(not(feature = "parallel"))]
+        let polys: Vec<CirclePoly<B>> = columns
             .into_iter()
             .map(|eval| eval.interpolate_with_twiddles(self.commitment_scheme.twiddles))
-            .collect_vec();
+            .collect();
+
         span.exit();
         self.polys.extend(polys);
         TreeSubspan {
