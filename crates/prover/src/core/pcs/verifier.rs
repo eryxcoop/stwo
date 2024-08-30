@@ -130,3 +130,47 @@ impl<MC: MerkleChannel> CommitmentSchemeVerifier<MC> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use starknet_ff::FieldElement;
+
+    use crate::core::{channel::Poseidon252Channel, fri::FriConfig, pcs::PcsConfig, vcs::{poseidon252_merkle::Poseidon252MerkleChannel}};
+    use super::CommitmentSchemeVerifier;
+
+    #[test]
+    fn test_commitment_scheme_verifier_commit() {
+        let config = PcsConfig {
+            pow_bits: 10,
+            fri_config: FriConfig::new(5, 4, 64),
+        };
+        
+        let channel = &mut Poseidon252Channel::default();
+        let commitment_scheme = &mut CommitmentSchemeVerifier::<Poseidon252MerkleChannel>::new(config);
+
+        let commitment_1 = FieldElement::from_hex_be("0x01cafae415ba4e4f6648b9c8d0c44a664060485580ac65ff8c161fb756836bd5").unwrap();
+        let sizes_1 = vec![10, 10, 10, 10];
+
+        assert_eq!(commitment_scheme.trees.len(), 0);
+        commitment_scheme.commit(commitment_1, &sizes_1, channel);
+        assert_eq!(commitment_scheme.trees.len(), 1);
+        assert_eq!(commitment_scheme.trees[0].root, FieldElement::from_hex_be("0x01cafae415ba4e4f6648b9c8d0c44a664060485580ac65ff8c161fb756836bd5").unwrap());
+        assert_eq!(commitment_scheme.trees[0].column_log_sizes, vec![14, 14, 14, 14]);
+
+        let commitment_2 = FieldElement::from_hex_be("0x0478dd9207927ad71f7c07e332b745a3d3aa08f593fcb033ef756d7438994595").unwrap();
+        let sizes_2 = vec![10, 10, 10, 10, 10, 10, 10, 10];
+        assert_eq!(commitment_scheme.trees.len(), 1);
+        commitment_scheme.commit(commitment_2, &sizes_2, channel);
+        assert_eq!(commitment_scheme.trees.len(), 2);
+        assert_eq!(commitment_scheme.trees[1].root, FieldElement::from_hex_be("0x0478dd9207927ad71f7c07e332b745a3d3aa08f593fcb033ef756d7438994595").unwrap());
+        assert_eq!(commitment_scheme.trees[1].column_log_sizes, vec![14, 14, 14, 14, 14, 14, 14, 14]);
+
+        let commitment_3 = FieldElement::from_hex_be("0x032fb1cb4a18da436f91b455ef3a8153b55eab841ba8b3fee7fa33ec050356bc").unwrap();
+        let sizes_3 = vec![10, 10, 10, 10];
+        assert_eq!(commitment_scheme.trees.len(), 2);
+        commitment_scheme.commit(commitment_3, &sizes_3, channel);
+        assert_eq!(commitment_scheme.trees.len(), 3);
+        assert_eq!(commitment_scheme.trees[2].root, FieldElement::from_hex_be("0x032fb1cb4a18da436f91b455ef3a8153b55eab841ba8b3fee7fa33ec050356bc").unwrap());
+        assert_eq!(commitment_scheme.trees[2].column_log_sizes, vec![14, 14, 14, 14]);
+    }
+}

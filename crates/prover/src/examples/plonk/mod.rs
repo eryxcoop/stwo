@@ -11,14 +11,14 @@ use crate::core::backend::simd::m31::LOG_N_LANES;
 use crate::core::backend::simd::qm31::PackedSecureField;
 use crate::core::backend::simd::SimdBackend;
 use crate::core::backend::Column;
-use crate::core::channel::Blake2sChannel;
+use crate::core::channel::{Poseidon252Channel};
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::{CommitmentSchemeProver, PcsConfig, TreeSubspan};
 use crate::core::poly::circle::{CanonicCoset, CircleEvaluation, PolyOps};
 use crate::core::poly::BitReversedOrder;
 use crate::core::prover::{prove, StarkProof};
-use crate::core::vcs::blake2_merkle::{Blake2sMerkleChannel, Blake2sMerkleHasher};
+use crate::core::vcs::poseidon252_merkle::{Poseidon252MerkleChannel, Poseidon252MerkleHasher};
 use crate::core::ColumnVec;
 
 pub type PlonkComponent = FrameworkComponent<PlonkEval>;
@@ -149,7 +149,7 @@ pub fn gen_interaction_trace(
 pub fn prove_fibonacci_plonk(
     log_n_rows: u32,
     config: PcsConfig,
-) -> (PlonkComponent, StarkProof<Blake2sMerkleHasher>) {
+) -> (PlonkComponent, StarkProof<Poseidon252MerkleHasher>) {
     assert!(log_n_rows >= LOG_N_LANES);
 
     // Prepare a fibonacci circuit.
@@ -181,9 +181,9 @@ pub fn prove_fibonacci_plonk(
     span.exit();
 
     // Setup protocol.
-    let channel = &mut Blake2sChannel::default();
+    let channel = &mut Poseidon252Channel::default();
     let commitment_scheme =
-        &mut CommitmentSchemeProver::<_, Blake2sMerkleChannel>::new(config, &twiddles);
+        &mut CommitmentSchemeProver::<_, Poseidon252MerkleChannel>::new(config, &twiddles);
 
     // Trace.
     let span = span!(Level::INFO, "Trace").entered();
@@ -196,7 +196,8 @@ pub fn prove_fibonacci_plonk(
     // Draw lookup element.
     let lookup_elements = LookupElements::draw(channel);
 
-    // Interaction trace.
+    // Interaction trace.use crate::core::vcs::blake2_merkle::{Blake2sMerkleChannel, Blake2sMerkleHasher};
+
     let span = span!(Level::INFO, "Interaction").entered();
     let (trace, claimed_sum) = gen_interaction_trace(log_n_rows, &circuit, &lookup_elements);
     let mut tree_builder = commitment_scheme.tree_builder();
@@ -254,11 +255,11 @@ mod tests {
 
     use crate::constraint_framework::logup::LookupElements;
     use crate::core::air::Component;
-    use crate::core::channel::Blake2sChannel;
+    use crate::core::channel::{Poseidon252Channel};
     use crate::core::fri::FriConfig;
     use crate::core::pcs::{CommitmentSchemeVerifier, PcsConfig};
     use crate::core::prover::verify;
-    use crate::core::vcs::blake2_merkle::Blake2sMerkleChannel;
+    use crate::core::vcs::poseidon252_merkle::Poseidon252MerkleChannel;
     use crate::examples::plonk::prove_fibonacci_plonk;
 
     #[test_log::test]
@@ -278,22 +279,43 @@ mod tests {
 
         // Verify.
         // TODO: Create Air instance independently.
-        let channel = &mut Blake2sChannel::default();
-        let commitment_scheme = &mut CommitmentSchemeVerifier::<Blake2sMerkleChannel>::new(config);
+        let channel = &mut Poseidon252Channel::default();
+        let commitment_scheme = &mut CommitmentSchemeVerifier::<Poseidon252MerkleChannel>::new(config);
 
         // Decommit.
         // Retrieve the expected column sizes in each commitment interaction, from the AIR.
         let sizes = component.trace_log_degree_bounds();
         // Trace columns.
+        println!("1st commitment");
+        println!("--------------");
+        println!("Commitments[0]: {:?}", proof.commitments[0]);
+        println!("Sizes[0]: {:?}", sizes[0]);
+        println!("Trees before: {:?}", commitment_scheme.trees);
         commitment_scheme.commit(proof.commitments[0], &sizes[0], channel);
+        println!("Trees after: {:?}", commitment_scheme.trees);
+
         // Draw lookup element.
         let lookup_elements = LookupElements::<2>::draw(channel);
         assert_eq!(lookup_elements, component.lookup_elements);
         // TODO(spapini): Check claimed sum against first and last instances.
         // Interaction columns.
+
+        println!("2nd commitment");
+        println!("--------------");
+        println!("Commitments[1]: {:?}", proof.commitments[1]);
+        println!("Sizes[1]: {:?}", sizes[1]);
+        println!("Trees before: {:?}", commitment_scheme.trees);
         commitment_scheme.commit(proof.commitments[1], &sizes[1], channel);
+        println!("Trees after: {:?}", commitment_scheme.trees);
+
         // Constant columns.
+        println!("3rd commitment");
+        println!("--------------");
+        println!("Commitments[2]: {:?}", proof.commitments[2]);
+        println!("Sizes[2]: {:?}", sizes[2]);
+        println!("Trees before: {:?}", commitment_scheme.trees);
         commitment_scheme.commit(proof.commitments[2], &sizes[2], channel);
+        println!("Trees after: {:?}", commitment_scheme.trees);
 
         verify(&[&component], channel, commitment_scheme, proof).unwrap();
     }
