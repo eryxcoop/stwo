@@ -1,5 +1,5 @@
 use super::{CanonicCoset, CircleDomain, CircleEvaluation, CirclePoly};
-use crate::core::backend::Col;
+use crate::core::backend::{Col, ColumnOps};
 use crate::core::circle::{CirclePoint, Coset};
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
@@ -33,7 +33,11 @@ pub trait PolyOps: FieldOps<BaseField> + Sized {
     fn interpolate_columns(
         columns: &ColumnVec<CircleEvaluation<Self, BaseField, BitReversedOrder>>,
         twiddles: &TwiddleTree<Self>,
-    ) -> Vec<CirclePoly<Self>> {
+    ) -> Vec<CirclePoly<Self>> where
+        CircleEvaluation<Self, BaseField, BitReversedOrder>: Send + Sync,
+        <Self as ColumnOps<BaseField>>::Column: Send + Sync,
+        <Self as PolyOps>::Twiddles: Send + Sync
+    {
         #[cfg(feature = "parallel")]
         return columns
             .into_par_iter()
