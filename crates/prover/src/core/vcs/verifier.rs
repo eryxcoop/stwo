@@ -12,6 +12,8 @@ use crate::core::utils::PeekableExt;
 use crate::core::ColumnVec;
 
 // TODO(spapini): This struct is not necessary. Make it a function on decommitment?
+
+#[derive(Debug)]
 pub struct MerkleVerifier<H: MerkleHasher> {
     pub root: H::Hash,
     pub column_log_sizes: Vec<u32>,
