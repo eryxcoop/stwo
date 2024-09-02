@@ -125,6 +125,11 @@ pub fn verify<MC: MerkleChannel>(
         return Err(VerificationError::OodsNotMatching);
     }
 
+    println!("Verify values");
+    println!("--------------");
+    println!("Commitments[1]: {:?}", sample_points);
+    println!("CS Proof: {:?}", proof.commitment_scheme_proof);
+    //println!("Channel: {:?}", channel);
     commitment_scheme.verify_values(sample_points, proof.commitment_scheme_proof, channel)
 }
 
