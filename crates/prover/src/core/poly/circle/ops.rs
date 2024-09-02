@@ -1,12 +1,14 @@
 use super::{CanonicCoset, CircleDomain, CircleEvaluation, CirclePoly};
 use crate::core::backend::Col;
 use crate::core::circle::{CirclePoint, Coset};
-use crate::core::ColumnVec;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::fields::FieldOps;
 use crate::core::poly::twiddles::TwiddleTree;
 use crate::core::poly::BitReversedOrder;
+use crate::core::ColumnVec;
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
 
 /// Operations on BaseField polynomials.
 pub trait PolyOps: FieldOps<BaseField> + Sized {
@@ -31,7 +33,19 @@ pub trait PolyOps: FieldOps<BaseField> + Sized {
     fn interpolate_columns(
         columns: &ColumnVec<CircleEvaluation<Self, BaseField, BitReversedOrder>>,
         twiddles: &TwiddleTree<Self>,
-    ) -> Vec<CirclePoly<Self>>;
+    ) -> Vec<CirclePoly<Self>> {
+        #[cfg(feature = "parallel")]
+        return columns
+            .into_par_iter()
+            .map(|eval| Self::interpolate(eval.clone(), twiddles))
+            .collect();
+
+        #[cfg(not(feature = "parallel"))]
+        return columns
+            .into_iter()
+            .map(|eval| Self::interpolate(eval.clone(), twiddles))
+            .collect();
+    }
 
     /// Evaluates the polynomial at a single point.
     /// Used by the [`CirclePoly::eval_at_point()`] function.

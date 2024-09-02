@@ -3,7 +3,6 @@ use num_traits::Zero;
 use super::CpuBackend;
 use crate::core::backend::{Col, ColumnOps};
 use crate::core::circle::{CirclePoint, Coset};
-use crate::core::ColumnVec;
 use crate::core::fft::{butterfly, ibutterfly};
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
@@ -83,16 +82,6 @@ impl PolyOps for CpuBackend {
         }
 
         CirclePoly::new(values)
-    }
-
-    fn interpolate_columns(
-        columns: &ColumnVec<CircleEvaluation<Self, BaseField, BitReversedOrder>>,
-        twiddles: &TwiddleTree<Self>,
-    ) -> Vec<CirclePoly<Self>> {
-        columns
-            .into_iter()
-            .map(|eval| Self::interpolate(eval.clone(), twiddles))
-            .collect()
     }
 
     fn eval_at_point(poly: &CirclePoly<Self>, point: CirclePoint<SecureField>) -> SecureField {
@@ -227,7 +216,7 @@ fn fft_layer_loop(
 /// Only works for line twiddles generated from a domain with size `>4`.
 fn circle_twiddles_from_line_twiddles(
     first_line_twiddles: &[BaseField],
-) -> impl Iterator<Item = BaseField> + '_ {
+) -> impl Iterator<Item=BaseField> + '_ {
     // The twiddles for layer 0 can be computed from the twiddles for layer 1.
     // Since the twiddles are bit reversed, we consider the circle domain in bit reversed order.
     // Each consecutive 4 points in the bit reversed order of a coset form a circle coset of size 4.
@@ -248,7 +237,7 @@ fn circle_twiddles_from_line_twiddles(
 }
 
 impl<F: ExtensionOf<BaseField>, EvalOrder> IntoIterator
-    for CircleEvaluation<CpuBackend, F, EvalOrder>
+for CircleEvaluation<CpuBackend, F, EvalOrder>
 {
     type Item = F;
     type IntoIter = std::vec::IntoIter<F>;
