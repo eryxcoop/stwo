@@ -168,15 +168,17 @@ impl<'a, 'b, B: BackendForChannel<MC>, MC: MerkleChannel> TreeBuilder<'a, 'b, B,
     pub fn extend_evals(
         &mut self,
         columns: ColumnVec<CircleEvaluation<B, BaseField, BitReversedOrder>>,
-    ) -> TreeSubspan where
+    ) -> TreeSubspan
+    where
         CircleEvaluation<B, BaseField, BitReversedOrder>: Send + Sync,
         <B as ColumnOps<BaseField>>::Column: Send + Sync,
-        <B as PolyOps>::Twiddles: Send + Sync
+        <B as PolyOps>::Twiddles: Send + Sync,
     {
         let span = span!(Level::INFO, "Interpolation for commitment").entered();
         let col_start = self.polys.len();
 
-        let polys: Vec<CirclePoly<B>> = B::interpolate_columns(&columns, self.commitment_scheme.twiddles);
+        let polys: Vec<CirclePoly<B>> =
+            B::interpolate_columns(&columns, self.commitment_scheme.twiddles);
 
         span.exit();
         self.polys.extend(polys);

@@ -76,9 +76,10 @@ impl<B: FieldOps<BaseField> + PolyOps, EvalOrder> SecureEvaluation<B, EvalOrder>
 
     pub fn into_coordinate_evals(
         self,
-    ) -> [CircleEvaluation<B, BaseField, EvalOrder>; SECURE_EXTENSION_DEGREE] where
+    ) -> [CircleEvaluation<B, BaseField, EvalOrder>; SECURE_EXTENSION_DEGREE]
+    where
         CircleEvaluation<B, BaseField, BitReversedOrder>: Send + Sync,
-        <B as PolyOps>::Twiddles: Send + Sync
+        <B as PolyOps>::Twiddles: Send + Sync,
     {
         let Self { domain, values, .. } = self;
         values.columns.map(|c| CircleEvaluation::new(domain, c))
