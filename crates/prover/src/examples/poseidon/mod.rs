@@ -377,20 +377,25 @@ mod tests {
 
     use itertools::Itertools;
     use num_traits::One;
+    use tracing::{span, Level};
 
     use crate::constraint_framework::assert_constraints;
     use crate::constraint_framework::logup::{LogupAtRow, LookupElements};
     use crate::core::air::Component;
+    use crate::core::backend::simd::SimdBackend;
+    use crate::core::backend::CpuBackend;
     use crate::core::channel::Blake2sChannel;
     use crate::core::fields::m31::BaseField;
     use crate::core::fri::FriConfig;
-    use crate::core::pcs::{CommitmentSchemeVerifier, PcsConfig, TreeVec};
-    use crate::core::poly::circle::CanonicCoset;
+    use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier, PcsConfig, TreeVec};
+    use crate::core::poly::circle::{CanonicCoset, CircleEvaluation, PolyOps};
+    use crate::core::poly::BitReversedOrder;
     use crate::core::prover::verify;
     use crate::core::vcs::blake2_merkle::Blake2sMerkleChannel;
+    use crate::core::ColumnVec;
     use crate::examples::poseidon::{
         apply_internal_round_matrix, apply_m4, eval_poseidon_constraints, gen_interaction_trace,
-        gen_trace, prove_poseidon, PoseidonElements,
+        gen_trace, prove_poseidon, PoseidonElements, LOG_EXPAND, N_COLUMNS
     };
     use crate::math::matrix::{RowMajorMatrix, SquareMatrix};
 
@@ -504,5 +509,50 @@ mod tests {
         commitment_scheme.commit(proof.commitments[1], &sizes[1], channel);
 
         verify(&[&component], channel, commitment_scheme, proof).unwrap();
+    }
+
+    #[test_log::test]
+    fn test_optimize_interpolation() {
+        let blowup_factor = 2;
+        let domain =
+            CanonicCoset::new(N_COLUMNS.ilog2() + LOG_EXPAND + blowup_factor).circle_domain();
+        let config = PcsConfig {
+            pow_bits: 10,
+            fri_config: FriConfig::new(5, 1, 64),
+        };
+
+        let simd_span = span!(Level::INFO, "Test SIMD interpolation").entered();
+        let simd_columns: ColumnVec<CircleEvaluation<SimdBackend, BaseField, BitReversedOrder>> =
+            (0..N_COLUMNS)
+                .map( |_index| {
+                    CircleEvaluation::<SimdBackend, BaseField, BitReversedOrder>::new(
+                        domain,
+                        (0..domain.size()).map(BaseField::from).collect(),
+                    )
+                })
+                .collect();
+        let simd_twiddles = SimdBackend::precompute_twiddles(domain.half_coset);
+        let mut simd_commitment_scheme_prover: CommitmentSchemeProver<
+            '_, SimdBackend, Blake2sMerkleChannel,
+        > = CommitmentSchemeProver::new(config, &simd_twiddles);
+        simd_commitment_scheme_prover.tree_builder().extend_evals(simd_columns);
+        simd_span.exit();
+
+        let cpu_span = span!(Level::INFO, "Test CPU interpolation").entered();
+        let cpu: ColumnVec<CircleEvaluation<CpuBackend, BaseField, BitReversedOrder>> =
+            (0..N_COLUMNS)
+                .map( |_index| {
+                    CircleEvaluation::<CpuBackend, BaseField, BitReversedOrder>::new(
+                        domain,
+                        (0..domain.size()).map(BaseField::from).collect(),
+                    )
+                })
+                .collect();
+        let cpu_twiddles = CpuBackend::precompute_twiddles(domain.half_coset);
+        let mut simd_commitment_scheme_prover: CommitmentSchemeProver<
+            '_, CpuBackend, Blake2sMerkleChannel
+        > = CommitmentSchemeProver::new(config, &cpu_twiddles);
+        simd_commitment_scheme_prover.tree_builder().extend_evals(cpu);
+        cpu_span.exit();
     }
 }
