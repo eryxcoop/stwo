@@ -302,6 +302,7 @@ impl<B: FriOps + MerkleOps<MC::H>, MC: MerkleChannel> FriProver<B, MC> {
     }
 }
 
+#[derive(Debug)]
 pub struct FriVerifier<MC: MerkleChannel> {
     config: FriConfig,
     /// Alpha used to fold all circle polynomials to univariate polynomials.
@@ -632,6 +633,7 @@ pub struct FriLayerProof<H: MerkleHasher> {
     pub commitment: H::Hash,
 }
 
+#[derive(Debug)]
 struct FriLayerVerifier<H: MerkleHasher> {
     degree_bound: LinePolyDegreeBound,
     domain: LineDomain,

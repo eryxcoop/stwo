@@ -46,7 +46,7 @@ impl MerkleHasher for Poseidon252MerkleHasher {
 
 impl Hash for FieldElement252 {}
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Poseidon252MerkleChannel;
 
 impl MerkleChannel for Poseidon252MerkleChannel {

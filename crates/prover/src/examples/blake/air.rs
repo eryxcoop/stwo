@@ -24,6 +24,7 @@ use crate::examples::blake::scheduler::{self, blake_scheduler_info, BlakeElement
 use crate::examples::blake::{
     round, xor_table, BlakeXorElements, XorAccums, N_ROUNDS, ROUND_LOG_SPLIT,
 };
+use core::fmt::Debug;
 
 #[derive(Serialize)]
 pub struct BlakeStatement0 {
@@ -401,7 +402,7 @@ where
 }
 
 #[allow(unused)]
-pub fn verify_blake<MC: MerkleChannel>(
+pub fn verify_blake<MC: MerkleChannel + Debug>(
     BlakeProof {
         stmt0,
         stmt1,

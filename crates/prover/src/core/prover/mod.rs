@@ -19,6 +19,8 @@ use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;
 use crate::core::vcs::verifier::MerkleVerificationError;
+use core::fmt::Debug;
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StarkProof<H: MerkleHasher> {
@@ -86,7 +88,7 @@ pub fn prove<B: BackendForChannel<MC>, MC: MerkleChannel>(
     })
 }
 
-pub fn verify<MC: MerkleChannel>(
+pub fn verify<MC: MerkleChannel + Debug>(
     components: &[&dyn Component],
     channel: &mut MC::C,
     commitment_scheme: &mut CommitmentSchemeVerifier<MC>,

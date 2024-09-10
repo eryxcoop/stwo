@@ -39,7 +39,7 @@ impl MerkleHasher for Blake2sMerkleHasher {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Blake2sMerkleChannel;
 
 impl MerkleChannel for Blake2sMerkleChannel {

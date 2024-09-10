@@ -12,7 +12,7 @@ pub const BLAKE_BYTES_PER_HASH: usize = 32;
 pub const FELTS_PER_HASH: usize = 8;
 
 /// A channel that can be used to draw random elements from a [Blake2sHash] digest.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Blake2sChannel {
     digest: Blake2sHash,
     pub channel_time: ChannelTime,

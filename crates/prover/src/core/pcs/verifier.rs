@@ -13,15 +13,17 @@ use crate::core::prover::VerificationError;
 use crate::core::vcs::ops::MerkleHasher;
 use crate::core::vcs::verifier::MerkleVerifier;
 use crate::core::ColumnVec;
+use core::fmt::Debug;
+
 
 /// The verifier side of a FRI polynomial commitment scheme. See [super].
 #[derive(Default)]
-pub struct CommitmentSchemeVerifier<MC: MerkleChannel> {
+pub struct CommitmentSchemeVerifier<MC: MerkleChannel + Debug> {
     pub trees: TreeVec<MerkleVerifier<MC::H>>,
     pub config: PcsConfig,
 }
 
-impl<MC: MerkleChannel> CommitmentSchemeVerifier<MC> {
+impl<MC: MerkleChannel + Debug> CommitmentSchemeVerifier<MC> {
     pub fn new(config: PcsConfig) -> Self {
         Self {
             trees: TreeVec::default(),
@@ -58,7 +60,9 @@ impl<MC: MerkleChannel> CommitmentSchemeVerifier<MC> {
         proof: CommitmentSchemeProof<MC::H>,
         channel: &mut MC::C,
     ) -> Result<(), VerificationError> {
-        channel.mix_felts(&proof.sampled_values.clone().flatten_cols());
+        let flattened = proof.sampled_values.clone().flatten_cols();
+        channel.mix_felts(&flattened);
+    
         let random_coeff = channel.draw_felt();
 
         let bounds = self
@@ -81,15 +85,18 @@ impl<MC: MerkleChannel> CommitmentSchemeVerifier<MC> {
         let mut fri_verifier =
             FriVerifier::<MC>::commit(channel, self.config.fri_config, proof.fri_proof, bounds)?;
 
+
         // Verify proof of work.
+
         channel.mix_nonce(proof.proof_of_work);
+
         if channel.trailing_zeros() < self.config.pow_bits {
             return Err(VerificationError::ProofOfWork);
         }
 
         // Get FRI query domains.
         let fri_query_domains = fri_verifier.column_query_positions(channel);
-
+        
         // Verify merkle decommitments.
         self.trees
             .as_ref()
@@ -118,6 +125,12 @@ impl<MC: MerkleChannel> CommitmentSchemeVerifier<MC> {
 
         // TODO(spapini): Properly defined column log size and dinstinguish between poly and
         // commitment.
+        println!("flattened_column_log_sizes: {:?}\n", self.column_log_sizes().flatten().into_iter().collect_vec());
+        println!("samples: {:?}\n", samples);
+        println!("random_coeff: {:?}\n", random_coeff);
+        println!("fri_query_domains: {:?}\n", fri_query_domains);
+        println!("flattened_queried_values: {:?}\n", proof.queried_values.clone().flatten());
+
         let fri_answers = fri_answers(
             self.column_log_sizes().flatten().into_iter().collect(),
             &samples,
@@ -214,8 +227,9 @@ mod tests {
         let commitment_scheme_verifier = &mut CommitmentSchemeVerifier::<Poseidon252MerkleChannel>::new(config);
         commitment_scheme_verifier.commit(commitment_scheme_prover.roots()[0], &log_sizes_cols, channel);
 
-        println!("Sample points: {:?}", sample_points);
-        println!("Proof: {:?}", commitment_scheme_prover_proof);
+        //println!("Sample points: {:?}", sample_points);
+        //println!("Proof: {:?}", commitment_scheme_prover_proof);
+        //println!("Channel: {:?}", channel);
         assert!(commitment_scheme_verifier.verify_values(sample_points, commitment_scheme_prover_proof, channel).is_ok());
     }
 }

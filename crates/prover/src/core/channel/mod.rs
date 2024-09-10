@@ -6,12 +6,13 @@ mod poseidon252;
 #[cfg(not(target_arch = "wasm32"))]
 pub use poseidon252::Poseidon252Channel;
 
+use core::fmt::Debug;
 mod blake2s;
 pub use blake2s::Blake2sChannel;
 
 pub const EXTENSION_FELTS_PER_HASH: usize = 2;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct ChannelTime {
     pub n_challenges: usize,
     n_sent: usize,
@@ -46,7 +47,7 @@ pub trait Channel: Default + Clone {
 }
 
 pub trait MerkleChannel: Default {
-    type C: Channel;
+    type C: Channel + Debug;
     type H: MerkleHasher;
     fn mix_root(channel: &mut Self::C, root: <Self::H as MerkleHasher>::Hash);
 }

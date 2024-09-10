@@ -12,7 +12,7 @@ pub const BYTES_PER_FELT252: usize = 31;
 pub const FELTS_PER_HASH: usize = 8;
 
 /// A channel that can be used to draw random elements from a Poseidon252 hash.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Poseidon252Channel {
     digest: FieldElement252,
     pub channel_time: ChannelTime,
