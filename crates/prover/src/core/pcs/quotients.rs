@@ -187,10 +187,14 @@ pub fn fri_answers_for_log_size(
 
 #[cfg(test)]
 mod tests {
+
+    use crate::core::backend::cpu::quotients::{accumulate_row_quotients, QuotientConstants};
     use crate::core::backend::cpu::{CpuCircleEvaluation, CpuCirclePoly};
-    use crate::core::circle::SECURE_FIELD_CIRCLE_GEN;
-    use crate::core::pcs::quotients::{compute_fri_quotients, PointSample};
-    use crate::core::poly::circle::CanonicCoset;
+    use crate::core::circle::{CirclePoint, CirclePointIndex, Coset, SECURE_FIELD_CIRCLE_GEN};
+    use crate::core::fields::cm31::CM31;
+    use crate::core::fields::qm31::QM31;
+    use crate::core::pcs::quotients::{compute_fri_quotients, ColumnSampleBatch, PointSample};
+    use crate::core::poly::circle::{CanonicCoset, CircleDomain, CircleEvaluation};
     use crate::{m31, qm31};
 
     #[test]
@@ -216,4 +220,38 @@ mod tests {
                 .interpolate();
         assert!(quot_poly_base_field.is_in_fri_space(LOG_SIZE));
     }
+
+    #[test]
+    fn test_accumulate_row_quotients(){
+        let sample_batches =  [ColumnSampleBatch { point: CirclePoint { x: QM31( CM31::from_m31(m31!(1395048677), m31!(640591314)), 
+                                                                                 CM31::from_m31(m31!(342871101), m31!(1049385418))), 
+                                                                        y: QM31( CM31::from_m31(m31!(474688795), m31!(2119282552)),
+                                                                                 CM31::from_m31(m31!(160740005), m31!(798859953)))},
+                                                   columns_and_values: vec![(0, QM31(CM31::from_m31(m31!(2082657879), m31!(1175528048)), CM31::from_m31(m31!(1000432343), m31!(763013627))))]
+                                                }
+                                ];
+        let column_evals =  vec![CircleEvaluation::new( CircleDomain{ half_coset: Coset::new(CirclePointIndex(1946157056), 0)}, 
+                                                    vec![m31!(1323727772),
+                                                         m31!(1323695004)],                                     
+        )];
+        let quotient_constants = QuotientConstants { line_coeffs: vec![vec![(QM31(CM31::from_m31(m31!(1507438696), m31!(1485287082)), CM31::from_m31(m31!(462219637), m31!(1981546355))), 
+                                                                             QM31(CM31::from_m31(m31!(747975780), m31!(1185576571)), CM31::from_m31(m31!(718995102), m31!(494594746))),  
+                                                                             QM31(CM31::from_m31(m31!(1714794137), m31!(1220651711)), CM31::from_m31(m31!(676173891), m31!(2009908523))), 
+                                                                            )]
+                                                                        ],
+                                                     batch_random_coeffs: vec![QM31(CM31::from_m31(m31!(1884891309), m31!(790325555)),
+                                                                                    CM31::from_m31(m31!(1984078504), m31!(1012128825)))], 
+                                                     denominator_inverses: vec![vec![CM31::from_m31(m31!(2087781265), m31!(1887176073)),
+                                                                                     CM31::from_m31(m31!(1973951885), m31!(1467411716))]]}; //, array![CM31 { a: M31 { inner: 2087781265 }, b: M31 { inner: 1887176073 } }, CM31 { a: M31 { inner: 1973951885 }, b: M31 { inner: 1467411716 } }]] };
+        let row = 0;
+        let domain_point =  CirclePoint { x: m31!(34602070), y: m31!(1415090252) };
+        let expected_value = QM31(CM31::from_m31(m31!(50599093), m31!(1497794168)), CM31::from_m31(m31!(254541753), m31!(369788671)));                                     
+        let value = accumulate_row_quotients(&sample_batches,
+                                             &[&column_evals[0]],
+                                             &quotient_constants,
+                                             row,
+                                             domain_point);
+        println!("{:?}", value);
+        assert_eq!(expected_value, value);
+        }
 }
