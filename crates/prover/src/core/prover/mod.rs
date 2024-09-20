@@ -1,3 +1,4 @@
+use core::fmt::Debug;
 use std::array;
 
 use serde::{Deserialize, Serialize};
@@ -19,8 +20,6 @@ use crate::core::pcs::{CommitmentSchemeProver, CommitmentSchemeVerifier};
 use crate::core::poly::circle::CircleEvaluation;
 use crate::core::poly::BitReversedOrder;
 use crate::core::vcs::verifier::MerkleVerificationError;
-use core::fmt::Debug;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StarkProof<H: MerkleHasher> {
@@ -131,7 +130,7 @@ pub fn verify<MC: MerkleChannel + Debug>(
     println!("--------------");
     println!("Commitments[1]: {:?}", sample_points);
     println!("CS Proof: {:?}", proof.commitment_scheme_proof);
-    //println!("Channel: {:?}", channel);
+    // println!("Channel: {:?}", channel);
     commitment_scheme.verify_values(sample_points, proof.commitment_scheme_proof, channel)
 }
 

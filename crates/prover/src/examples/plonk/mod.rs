@@ -11,7 +11,7 @@ use crate::core::backend::simd::m31::LOG_N_LANES;
 use crate::core::backend::simd::qm31::PackedSecureField;
 use crate::core::backend::simd::SimdBackend;
 use crate::core::backend::Column;
-use crate::core::channel::{Poseidon252Channel};
+use crate::core::channel::Poseidon252Channel;
 use crate::core::fields::m31::BaseField;
 use crate::core::fields::qm31::SecureField;
 use crate::core::pcs::{CommitmentSchemeProver, PcsConfig, TreeSubspan};
@@ -196,7 +196,8 @@ pub fn prove_fibonacci_plonk(
     // Draw lookup element.
     let lookup_elements = LookupElements::draw(channel);
 
-    // Interaction trace.use crate::core::vcs::blake2_merkle::{Blake2sMerkleChannel, Blake2sMerkleHasher};
+    // Interaction trace.use crate::core::vcs::blake2_merkle::{Blake2sMerkleChannel,
+    // Blake2sMerkleHasher};
 
     let span = span!(Level::INFO, "Interaction").entered();
     let (trace, claimed_sum) = gen_interaction_trace(log_n_rows, &circuit, &lookup_elements);
@@ -255,7 +256,7 @@ mod tests {
 
     use crate::constraint_framework::logup::LookupElements;
     use crate::core::air::Component;
-    use crate::core::channel::{Poseidon252Channel};
+    use crate::core::channel::Poseidon252Channel;
     use crate::core::fri::FriConfig;
     use crate::core::pcs::{CommitmentSchemeVerifier, PcsConfig};
     use crate::core::prover::verify;
@@ -280,7 +281,8 @@ mod tests {
         // Verify.
         // TODO: Create Air instance independently.
         let channel = &mut Poseidon252Channel::default();
-        let commitment_scheme = &mut CommitmentSchemeVerifier::<Poseidon252MerkleChannel>::new(config);
+        let commitment_scheme =
+            &mut CommitmentSchemeVerifier::<Poseidon252MerkleChannel>::new(config);
 
         // Decommit.
         // Retrieve the expected column sizes in each commitment interaction, from the AIR.

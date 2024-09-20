@@ -1,3 +1,4 @@
+use core::fmt::Debug;
 use std::simd::u32x16;
 
 use itertools::{chain, multiunzip, Itertools};
@@ -24,7 +25,6 @@ use crate::examples::blake::scheduler::{self, blake_scheduler_info, BlakeElement
 use crate::examples::blake::{
     round, xor_table, BlakeXorElements, XorAccums, N_ROUNDS, ROUND_LOG_SPLIT,
 };
-use core::fmt::Debug;
 
 #[derive(Serialize)]
 pub struct BlakeStatement0 {

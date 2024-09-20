@@ -3,10 +3,10 @@ use super::vcs::ops::MerkleHasher;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod poseidon252;
+use core::fmt::Debug;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub use poseidon252::Poseidon252Channel;
-
-use core::fmt::Debug;
 mod blake2s;
 pub use blake2s::Blake2sChannel;
 
